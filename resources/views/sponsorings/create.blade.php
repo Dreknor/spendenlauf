@@ -13,7 +13,7 @@
                     @csrf
                     <div class="form-row">
                         <label for="type">
-                            {{__('Team-, Läufer- oder Projektsponsoring?')}}
+                            {{__('Spende für Team oder Läufer?')}}
                         </label>
                         <select class="custom-select" name="type" id="sponsoringType" required>
                             <option disabled selected>{{__('bitte wählen')}}</option>

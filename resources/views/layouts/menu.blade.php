@@ -48,6 +48,15 @@
             </li>
         @endcan
 
+        @can('show auswertung')
+            <li class="@if(request()->segment(1)=="auswertung") active @endif">
+                <a href="{{url('/auswertung')}}">
+                    <i class="fas fa-award"></i>
+                    <p>Auswertung</p>
+                </a>
+            </li>
+        @endcan
+
         @can('import export')
             <li class="@if(request()->segment(1)=="Export") active @endif">
                 <a href="{{url('/export/laeufer')}}">

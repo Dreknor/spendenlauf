@@ -38,6 +38,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users','UserController');
     });
 
+    Route::group(['middleware' => ['permission:show auswertung']], function () {
+        Route::get('auswertung','AuswertungsController@index');
+    });
+
     Route::group(['middleware' => ['permission:edit projekt']], function () {
         Route::resource('projects','ProjectsController', ["except"    => "index"]);
     });
