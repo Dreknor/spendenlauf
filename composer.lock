@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dc2ab31eb6c74f8e64740e7834721934",
+    "content-hash": "90bf50b0dcd0a09dc4b0101a14da0675",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -2978,16 +2978,16 @@
         },
         {
             "name": "sentry/sentry-laravel",
-            "version": "1.4.0",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-laravel.git",
-                "reference": "d1d6136a3ea49c940bda7d9d2e98bffd1d06c70e"
+                "reference": "724e86b3f96e2b87856b818a2bf53c80e796c279"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/d1d6136a3ea49c940bda7d9d2e98bffd1d06c70e",
-                "reference": "d1d6136a3ea49c940bda7d9d2e98bffd1d06c70e",
+                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/724e86b3f96e2b87856b818a2bf53c80e796c279",
+                "reference": "724e86b3f96e2b87856b818a2bf53c80e796c279",
                 "shasum": ""
             },
             "require": {
@@ -3043,7 +3043,7 @@
                 "logging",
                 "sentry"
             ],
-            "time": "2019-10-15T19:34:37+00:00"
+            "time": "2019-11-11T11:30:37+00:00"
         },
         {
             "name": "spatie/image",
@@ -4990,6 +4990,7 @@
                 "psr",
                 "psr-7"
             ],
+            "abandoned": "laminas/laminas-diactoros",
             "time": "2019-10-10T17:38:20+00:00"
         }
     ],

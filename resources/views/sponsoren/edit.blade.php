@@ -12,16 +12,16 @@
                                     {{__('Spender bearbeiten')}}
                                 </h5>
                             </div>
-                            <div class="col-sm-12 col-md-4">
-                                <div class="pull-right">
-                                    <a href="{{url("sponsor/sendMail/$sponsor->id")}}" class="btn btn-warning">
-                                        <i class="far fa-paper-plane"></i>
-                                        {{__('Mailing versenden')}}
-                                    </a>
+                            @can('send mail')
+                                <div class="col-sm-12 col-md-4">
+                                    <div class="pull-right">
+                                        <a href="{{url("sponsor/sendMail/$sponsor->id")}}" class="btn btn-warning">
+                                            <i class="far fa-paper-plane"></i>
+                                            {{__('Mailing versenden')}}
+                                        </a>
+                                    </div>
                                 </div>
-
-                            </div>
-
+                            @endcan
                         </div>
 
                     </div>

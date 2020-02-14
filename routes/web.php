@@ -19,7 +19,7 @@ Route::get('projects', 'ProjectsController@index');
 
 Auth::routes(['verify' => true]);
 Route::get('image/{media_id}', 'ImageController@getImage');
-
+Route::get('user/{user_id}/sendVerification', 'UserController@sendVerification');
 
 Route::get('/home', 'HomeController@index')->name('home');
 

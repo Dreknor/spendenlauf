@@ -36,7 +36,7 @@
                             <th>{{__('Rundenbetrag')}}</th>
                             <th>{{__('max. Betrag')}}</th>
                             <th>{{__('Projekte')}}</th>
-                            <th>Betrag ({{$summe}})</th>
+                            <th>Betrag ({{number_format($summe, 2)}} €)</th>
                             <th></th>
                             </thead>
                             <tbody>
@@ -86,7 +86,7 @@
                             @cannot('edit sponsorings')
                                 <tr>
                                     <td colspan="7 ">
-                                        {{$sponsoren->links()}}
+                                        {{$sponsorings->links()}}
                                     </td>
                                 </tr>
                             @endcannot

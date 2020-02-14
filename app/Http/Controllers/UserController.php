@@ -12,7 +12,7 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:edit user');
+
     }
 
     /**
@@ -22,6 +22,7 @@ class UserController extends Controller
      */
     public function index()
     {
+        $this->middleware('permission:edit user');
         return view('user.index', [
             'users' => User::with('permissions')->get()
         ]);
@@ -57,6 +58,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $this->middleware('permission:edit user');
         return view('user.show',[
             "user" => $user,
             'permissions' => Permission::all()
@@ -73,6 +75,7 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $this->middleware('permission:edit user');
         $user->fill($request->all());
 
 
@@ -103,6 +106,18 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+
+    }
+
+    public function sendVerification($user_id){
+
+        $user = User::find($user_id);
+        $user->sendEmailVerificationNotification();
+
+        return redirect()->back()->with([
+            "type"   => "success",
+            "Meldung"    => "E-Mail wurde versandt."
+        ]);
 
     }
 }

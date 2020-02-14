@@ -8,11 +8,17 @@ use App\Mail\AddLaeuferToTeam;
 use App\Model\Laeufer;
 use App\Model\Startnummer;
 use App\Model\Teams;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class LaeuferController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth']);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -43,6 +49,7 @@ class LaeuferController extends Controller
      */
     public function create()
     {
+
         return view('laeufer.create');
     }
 
@@ -55,15 +62,18 @@ class LaeuferController extends Controller
     public function store(CreateLaeuferRequest $request)
     {
 
+        $Input = $request->all();
+
+
         $Startnummer = Startnummer::query()->first();
         $Laeufer = Laeufer::firstOrCreate([
-           'vorname'    => $request->vorname,
-           'nachname'    => $request->nachname,
-           'geburtsdatum'    => $request->geburtsdatum,
+           'vorname'    =>  $Input['vorname'],
+           'nachname'    =>  $Input['nachname'],
+           'geburtsdatum'    => $Input['geburtsdatum'],
         ], [
-            'geschlecht'    => $request->geschlecht,
+            'geschlecht'    => $Input['geschlecht'],
             "startnummer"   => $Startnummer->startnummer,
-            'email'         => $request->email,
+            'email'         => $Input['email'],
             'verwaltet_von' => auth()->user()->id
         ]);
 

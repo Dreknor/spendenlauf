@@ -15,9 +15,16 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,200" rel="stylesheet" />
 
     <script src="https://kit.fontawesome.com/c8f58e3eb6.js"></script>
+    <!--
+    <link href="{{asset('/css/all.css')}}" rel="stylesheet">
+
+    <link href="{{asset('/css/fontawesome.css')}}" rel="stylesheet">
+    <link href="{{asset('/css/brands.css')}}" rel="stylesheet">
+    <link href="{{asset('/css/solid.css')}}" rel="stylesheet">
+    <script defer src="{{asset('/js/all.js')}}"></script>
+    -->
 
     @yield('css')
-
 </head>
 
 <body id="app-layout">
@@ -93,7 +100,7 @@
     </nav>
     <!-- End Navbar -->
 
-    
+
 
 
     <div class="content">

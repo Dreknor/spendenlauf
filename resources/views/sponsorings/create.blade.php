@@ -26,7 +26,7 @@
                         <select class="custom-select empfaenger" name="laeufer"  >
                             <option disabled selected>{{__('bitte wählen')}}</option>
                         @foreach($laeufers as $laeufer)
-                                <option value="{{$laeufer->id}}">{{$laeufer->name}}</option>
+                                <option value="{{$laeufer->id}}">{{$laeufer->nachname}}, {{$laeufer->vorname}}</option>
                             @endforeach
                         </select>
                     </div>
@@ -44,7 +44,7 @@
                         <select class="custom-select empfaenger" name="sponsor" id="selectSponsor" >
                             <option disabled selected>{{__('bitte wählen')}}</option>
                             @foreach($sponsors as $sponsor)
-                                <option value="{{$sponsor->id}}">{{$sponsor->name}}</option>
+                                <option value="{{$sponsor->id}}">{{!is_null($sponsor->firmenname )!= "" ? $sponsor->firmenname. " ($sponsor->nachname, $sponsor->vorname)" : $sponsor->nachname.", ".$sponsor->vorname}}</option>
                             @endforeach
                         </select>
                     </div>

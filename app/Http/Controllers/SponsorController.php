@@ -93,7 +93,7 @@ class SponsorController extends Controller
     {
         $sponsor = Sponsor::find($sponsor);
 
-        if (!auth()->user()->can('edit sponsoren') and !auth()->user()->contains($sponsor)){
+        if (!auth()->user()->can('edit sponsoren') and !auth()->user()->sponsoren->contains($sponsor)){
             return redirect()->back()->with([
                 "type"  => "danger",
                 "Meldung"   => __('Berechtigung fehlt')

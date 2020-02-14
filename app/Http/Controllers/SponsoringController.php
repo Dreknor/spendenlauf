@@ -65,10 +65,10 @@ class SponsoringController extends Controller
         $projects = Projects::all();
 
         return view('sponsorings.create',[
-            "laeufers"  => $laeufer,
-            "sponsors"  => $sponsors,
+            "laeufers"  => $laeufer->sortBy('nachname'),
+            "sponsors"  => $sponsors->sortBy('nachname'),
             "projects"  => $projects,
-            "teams"     => $teams,
+            "teams"     => $teams->sortBy('name')
         ]);
     }
 

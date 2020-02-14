@@ -91,6 +91,9 @@
                         <p>
                             {{__('Ihre E-Mail-Adresse muss zunächste bestätigt werden. Bitte nutzen Sie den Link aus der versendeten E-Mail.')}}
                         </p>
+                        <p>
+                            <a href="user/{{auth()->user()->id}}/sendVerification" class="btn btn-info">{{__('E-Mail erneut zusenden')}}</a>
+                        </p>
                     </div>
                 @endif
                 <div class="card-body">
