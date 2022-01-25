@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateSponsorsTable extends Migration
 {
@@ -13,7 +13,6 @@ class CreateSponsorsTable extends Migration
      */
     public function up()
     {
-
         Schema::create('sponsors', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('anrede');
@@ -33,7 +32,6 @@ class CreateSponsorsTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('sponsor_id');
         });
-
     }
 
     /**
@@ -45,6 +43,5 @@ class CreateSponsorsTable extends Migration
     {
         Schema::dropIfExists('sponsors');
         Schema::dropIfExists('sponsor_user');
-
     }
 }

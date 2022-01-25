@@ -8,9 +8,8 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 
-class SponsorExport implements  FromCollection, WithStrictNullComparison, ShouldAutoSize, WithHeadings
+class SponsorExport implements FromCollection, WithStrictNullComparison, ShouldAutoSize, WithHeadings
 {
-
     public function headings(): array
     {
         return [
@@ -24,26 +23,26 @@ class SponsorExport implements  FromCollection, WithStrictNullComparison, Should
             'Plz',
             'Ort',
             'Telefon',
-            'Spendensumme'
+            'Spendensumme',
         ];
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
-       $Sponsoren = Sponsor::all();
-       $berechneteSponsoren = [];
+        $Sponsoren = Sponsor::all();
+        $berechneteSponsoren = [];
 
-       foreach ($Sponsoren as $sponsor){
-           $spendensumme = $sponsor->spendensumme;
-           $sponsor = $sponsor->toArray();
-           $sponsor['spendensumme'] = $spendensumme;
+        foreach ($Sponsoren as $sponsor) {
+            $spendensumme = $sponsor->spendensumme;
+            $sponsor = $sponsor->toArray();
+            $sponsor['spendensumme'] = $spendensumme;
 
-           $berechneteSponsoren[]=$sponsor;
-       }
+            $berechneteSponsoren[] = $sponsor;
+        }
 
-       return collect($berechneteSponsoren);
+        return collect($berechneteSponsoren);
     }
 }

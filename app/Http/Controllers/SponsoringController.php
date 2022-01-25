@@ -19,16 +19,17 @@ class SponsoringController extends Controller
      */
     public function index()
     {
-        if (auth()->user()->can('edit sponsorings')){
+        if (auth()->user()->can('edit sponsorings')) {
             $sponsorings = Sponsoring::orderByDesc('created_at')->get();
         } else {
             $sponsorings = auth()->user()->sponsorings->sortByDesc('created_at')->paginate(20);
         }
 
         $sponsorings->load('sponsorable', 'sponsor', 'projects');
-        return view('sponsorings.index',[
+
+        return view('sponsorings.index', [
             'sponsorings'   => $sponsorings,
-            'summe'         => $sponsorings->sum('spende')
+            'summe'         => $sponsorings->sum('spende'),
         ]);
     }
 
@@ -39,19 +40,19 @@ class SponsoringController extends Controller
      */
     public function create()
     {
-        if (auth()->user()->can('edit laeufer')){
+        if (auth()->user()->can('edit laeufer')) {
             $laeufer = Laeufer::orderBy('nachname')->get();
         } else {
             $laeufer = auth()->user()->laeufer()->orderBy('nachname')->get();
         }
 
-        if (auth()->user()->can('edit sponsoren')){
+        if (auth()->user()->can('edit sponsoren')) {
             $sponsors = Sponsor::orderBy('nachname')->get();
         } else {
             $sponsors = auth()->user()->sponsoren()->orderBy('nachname')->get();
         }
 
-        if (auth()->user()->can('edit teams')){
+        if (auth()->user()->can('edit teams')) {
             $teams = Teams::orderBy('name')->get();
         } else {
             //$teams = auth()->user()->teams()->orderBy('name')->get();
@@ -64,11 +65,11 @@ class SponsoringController extends Controller
         }
         $projects = Projects::all();
 
-        return view('sponsorings.create',[
-            "laeufers"  => $laeufer->sortBy('nachname'),
-            "sponsors"  => $sponsors->sortBy('nachname'),
-            "projects"  => $projects,
-            "teams"     => $teams->sortBy('name')
+        return view('sponsorings.create', [
+            'laeufers'  => $laeufer->sortBy('nachname'),
+            'sponsors'  => $sponsors->sortBy('nachname'),
+            'projects'  => $projects,
+            'teams'     => $teams->sortBy('name'),
         ]);
     }
 
@@ -85,7 +86,7 @@ class SponsoringController extends Controller
         $sponsoring->verwaltet_von = auth()->user()->id;
         $sponsoring->sponsor_id = $request->sponsor;
 
-        if ($request->type == "Team"){
+        if ($request->type == 'Team') {
             $Team = Teams::find($request->team);
 
             $sponsoring->sponsorable_id = $request->team;
@@ -95,26 +96,21 @@ class SponsoringController extends Controller
 
             $sponsoring->sponsorable_id = $request->laeufer;
             $sponsoring->sponsorable_type = get_class($Laeufer);
-
         }
 
         $sponsoring->save();
 
-        if (count($request->projects)>0){
+        if (count($request->projects) > 0) {
             $sponsoring->projects()->sync($request->projects);
         } else {
             $sponsoring->projects()->sync(Projects::all());
-
         }
 
-
-
         return redirect(url('sponsorings'))->with([
-            'type'  => "success",
-            "Meldung"   => __('Spende wurde erstellt')
+            'type'  => 'success',
+            'Meldung'   => __('Spende wurde erstellt'),
         ]);
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -124,21 +120,19 @@ class SponsoringController extends Controller
      */
     public function destroy(Sponsoring $sponsoring)
     {
-        if ($sponsoring->verwaltet_von == auth()->user()->id or auth()->user()->can('edit sponsorings')){
-
-
+        if ($sponsoring->verwaltet_von == auth()->user()->id or auth()->user()->can('edit sponsorings')) {
             $sponsoring->projects()->detach();
             $sponsoring->delete();
+
             return redirect()->back()->with([
-                "type"  => "success",
-                "Meldung"  => __('Spende gelöscht')
+                'type'  => 'success',
+                'Meldung'  => __('Spende gelöscht'),
             ]);
         }
 
         return redirect()->back()->with([
-            "type"  => "danger",
-            "Meldung"  => __('Berechtigung fehlt')
+            'type'  => 'danger',
+            'Meldung'  => __('Berechtigung fehlt'),
         ]);
-
     }
 }

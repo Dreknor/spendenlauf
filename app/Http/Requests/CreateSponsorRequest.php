@@ -24,7 +24,7 @@ class CreateSponsorRequest extends FormRequest
     public function rules()
     {
         return [
-            'anrede'    => "required|in:Herr,Frau,Firma",
+            'anrede'    => 'required|in:Herr,Frau,Firma',
             'firmenname'    => 'nullable|required_if:anrede,Firma|string',
             'vorname'   => 'required|string',
             'nachname'   => 'required|string',

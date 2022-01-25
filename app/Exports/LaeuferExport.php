@@ -16,14 +16,15 @@ class LaeuferExport implements FromCollection, WithStrictNullComparison, ShouldA
             'Startnummer',
             'Nachname',
             'Vorname',
-            'Runden'
+            'Runden',
         ];
     }
+
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
-        return Laeufer::query()->orderBy('nachname')->get(['startnummer','nachname','vorname','runden']);
+        return Laeufer::query()->orderBy('nachname')->get(['startnummer', 'nachname', 'vorname', 'runden']);
     }
 }

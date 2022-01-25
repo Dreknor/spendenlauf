@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Model\Sponsoring;
 use App\Repositories\SpendenlaufRepository;
 
-
 class HomeController extends Controller
 {
     /**
@@ -30,13 +29,11 @@ class HomeController extends Controller
         $sponsoring = Sponsoring::all();
         $sponsoring->load('sponsorable', 'sponsor', 'projects');
 
-
-
-        return view('home',[
+        return view('home', [
             'Laeufer'=>  $repository->anzahlLauefer(),
             'Teams'=> $repository->anzahlTeams(),
             'Sponsoren'=> $repository->anzahlSponsoren(),
-            'Spenden'   => $sponsoring->sum("spende")
+            'Spenden'   => $sponsoring->sum('spende'),
         ]);
     }
 }
