@@ -13,7 +13,6 @@ class CreateProjectRequest extends FormRequest
      */
     public function authorize()
     {
-
         return auth()->user()->can('edit projekt');
     }
 
@@ -25,8 +24,8 @@ class CreateProjectRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'  => "required|string",
-            "description"   => "required"
+            'name'  => 'required|string',
+            'description'   => 'required',
         ];
     }
 }

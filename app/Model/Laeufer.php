@@ -7,33 +7,36 @@ use Illuminate\Database\Eloquent\Model;
 
 class Laeufer extends Model
 {
-    protected $fillable=['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
-    protected $visible=['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
+    protected $fillable = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
+
+    protected $visible = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
 
     protected $dates = ['created_at', 'updated_at', 'geburtsdatum'];
 
     protected $casts = [
         'created_at' => 'datetime:Y-m-d',
     ];
-/**
-* Accessor for Age.
-*/
+
+    /**
+     * Accessor for Age.
+     */
     public function getAgeAttribute()
     {
         return Carbon::parse($this->attributes['geburtsdatum'])->age;
     }
 
-
-
-    public function getNameAttribute ($value){
-        return $this->vorname." ".$this->nachname;
+    public function getNameAttribute($value)
+    {
+        return $this->vorname.' '.$this->nachname;
     }
 
-    public function besitzer(){
+    public function besitzer()
+    {
         return $this->belongsTo(User::class, 'verwaltet_von');
     }
 
-    public function team(){
+    public function team()
+    {
         return $this->belongsTo(Teams::class, 'team_id');
     }
 
@@ -45,8 +48,8 @@ class Laeufer extends Model
         return $this->morphMany(Sponsoring::class, 'sponsorable');
     }
 
-
-    public function laeufer(){
+    public function laeufer()
+    {
         return $this;
     }
 }

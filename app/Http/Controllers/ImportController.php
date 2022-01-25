@@ -15,23 +15,25 @@ class ImportController extends Controller
         $this->middleware('permission:import export');
     }
 
-    public function import(){
+    public function import()
+    {
         return view('import.create');
     }
 
-    public function importFile(Request $request){
-        if (!$request->hasFile('file')){
+    public function importFile(Request $request)
+    {
+        if (! $request->hasFile('file')) {
             return redirect()->back()->with([
-               "type"   => 'danher',
-               'Meldung'    => __('Datei fehlt')
+                'type'   => 'danher',
+                'Meldung'    => __('Datei fehlt'),
             ]);
         }
 
         Excel::import(new RundenUpdateImport(), $request->file('file'));
 
         return redirect('home')->with([
-            'type'  => "success",
-            'Meldung'   => __(Laeufer::where('updated_at','>=' ,Carbon::now()->subSeconds(30))->count().' Imports abgeschlossen')
+            'type'  => 'success',
+            'Meldung'   => __(Laeufer::where('updated_at', '>=', Carbon::now()->subSeconds(30))->count().' Imports abgeschlossen'),
         ]);
     }
 }
