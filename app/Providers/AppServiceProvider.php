@@ -30,8 +30,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        Collection::macro('paginate', function($perPage, $total = null, $page = null, $pageName = 'page') {
+        Collection::macro('paginate', function ($perPage, $total = null, $page = null, $pageName = 'page') {
             $page = $page ?: LengthAwarePaginator::resolveCurrentPage($pageName);
+
             return new LengthAwarePaginator(
                 $this->forPage($page, $perPage),
                 $total ?: $this->count(),
@@ -44,14 +45,14 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        \Illuminate\Support\Collection::macro('sortByMulti', function(array $keys) {
+        \Illuminate\Support\Collection::macro('sortByMulti', function (array $keys) {
             $currentIndex = 0;
 
             $keys = array_map(function ($key, $sort) {
                 return ['key' => $key, 'sort' => $sort];
             }, array_keys($keys), $keys);
 
-            $sortBy = function (\Illuminate\Support\Collection $collection) use (&$currentIndex, $keys, &$sortBy) {
+            $sortBy = function (Collection $collection) use (&$currentIndex, $keys, &$sortBy) {
                 if ($currentIndex >= count($keys)) {
                     return $collection;
                 }
@@ -59,13 +60,13 @@ class AppServiceProvider extends ServiceProvider
                 $sort = $keys[$currentIndex]['sort'];
                 $sortFunc = $sort === 'DESC' ? 'sortByDesc' : 'sortBy';
                 $currentIndex++;
+
                 return $collection->$sortFunc($key)->groupBy($key)->map($sortBy)->ungroup();
             };
 
             /** @var \Illuminate\Support\Collection $this */
             return $sortBy($this);
         });
-
 
         /**
          * Ungroup Previously Grouped Collection
@@ -76,8 +77,8 @@ class AppServiceProvider extends ServiceProvider
             $this->each(function ($item) use (&$newCollection) {
                 $newCollection = $newCollection->merge($item);
             });
+
             return $newCollection;
         });
-
     }
 }

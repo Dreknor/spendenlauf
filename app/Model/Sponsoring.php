@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sponsoring extends Model
 {
-    protected $fillable = ["sponsor_id", "verwaltet_von", "rundenBetrag", 'festBetrag', "maxBetrag"];
-    protected $visible = ["sponsor_id", "verwaltet_von", "rundenBetrag", 'festBetrag', "maxBetrag"];
+    protected $fillable = ['sponsor_id', 'verwaltet_von', 'rundenBetrag', 'festBetrag', 'maxBetrag'];
+
+    protected $visible = ['sponsor_id', 'verwaltet_von', 'rundenBetrag', 'festBetrag', 'maxBetrag'];
 
     protected $attributes = [
         'rundenBetrag' => '0',
@@ -30,7 +31,6 @@ class Sponsoring extends Model
         return $this->morphTo();
     }
 
-
     public function verwalter()
     {
         return $this->belongsTo(User::class, 'verwaltet_von');
@@ -46,23 +46,22 @@ class Sponsoring extends Model
         return $this->belongsToMany(Projects::class);
     }
 
-    public function spende($Runde = NULL)
+    public function spende($Runde = null)
     {
         return $this->getSpendeAttribute($Runde);
     }
 
-    public function getSpendeAttribute($Runde = NULL)
+    public function getSpendeAttribute($Runde = null)
     {
         if (is_null($Runde)) {
             $Runde = $this->sponsorable->runden;
         }
 
-
         $Rundenbetrag = $Runde * $this->rundenBetrag;
 
         $Summe = $this->festBetrag + $Rundenbetrag;
 
-        if (!is_null($this->maxBetrag)) {
+        if (! is_null($this->maxBetrag)) {
             if ($Summe > $this->maxBetrag) {
                 $Summe = $this->maxBetrag;
             }
@@ -70,10 +69,4 @@ class Sponsoring extends Model
 
         return $Summe;
     }
-
-
-
-
-
-
 }

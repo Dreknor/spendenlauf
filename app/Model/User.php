@@ -2,9 +2,9 @@
 
 namespace App\Model;
 
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -40,29 +40,33 @@ class User extends Authenticatable /*implements MustVerifyEmail*/
         'email_verified_at' => 'datetime',
     ];
 
-    public function getFullNameAttribute ($value){
-        return $this->vorname." ".$this->nachname;
+    public function getFullNameAttribute($value)
+    {
+        return $this->vorname.' '.$this->nachname;
     }
 
-
-    public function getNameAttribute ($value){
-        return $this->vorname." ".$this->nachname;
+    public function getNameAttribute($value)
+    {
+        return $this->vorname.' '.$this->nachname;
     }
 
-    public function laeufer(){
+    public function laeufer()
+    {
         return $this->hasMany(Laeufer::class, 'verwaltet_von');
     }
 
-    public function sponsorings(){
+    public function sponsorings()
+    {
         return $this->hasMany(Sponsoring::class, 'verwaltet_von');
     }
 
-    public function teams(){
+    public function teams()
+    {
         return $this->hasMany(Teams::class, 'verwaltet_von');
     }
 
-    public function sponsoren(){
+    public function sponsoren()
+    {
         return $this->belongsToMany(Sponsor::class);
     }
 }
-

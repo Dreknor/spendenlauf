@@ -26,22 +26,24 @@ class LaeuferController extends Controller
      */
     public function index()
     {
-
-        if (auth()->user()->can('edit laeufer')){
+        if (auth()->user()->can('edit laeufer')) {
             $laeufer = Laeufer::query()->orderBy('nachname')->paginate(40);
         } else {
             $laeufer = auth()->user()->laeufer()->orderBy('nachname')->paginate(20);
         }
 
         $laeufer->load(['team', 'besitzer']);
-        return view('laeufer.index',[
-            'laeufer'   => $laeufer
+
+        return view('laeufer.index', [
+            'laeufer'   => $laeufer,
         ]);
     }
 
-    public function show(Laeufer $laeufer){
+    public function show(Laeufer $laeufer)
+    {
         return $this->edit($laeufer);
     }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -49,7 +51,6 @@ class LaeuferController extends Controller
      */
     public function create()
     {
-
         return view('laeufer.create');
     }
 
@@ -61,33 +62,29 @@ class LaeuferController extends Controller
      */
     public function store(CreateLaeuferRequest $request)
     {
-
         $Input = $request->all();
-
 
         $Startnummer = Startnummer::query()->first();
         $Laeufer = Laeufer::firstOrCreate([
-           'vorname'    =>  $Input['vorname'],
-           'nachname'    =>  $Input['nachname'],
-           'geburtsdatum'    => $Input['geburtsdatum'],
+            'vorname'    =>  $Input['vorname'],
+            'nachname'    =>  $Input['nachname'],
+            'geburtsdatum'    => $Input['geburtsdatum'],
         ], [
             'geschlecht'    => $Input['geschlecht'],
-            "startnummer"   => $Startnummer->startnummer,
+            'startnummer'   => $Startnummer->startnummer,
             'email'         => $Input['email'],
-            'verwaltet_von' => auth()->user()->id
+            'verwaltet_von' => auth()->user()->id,
         ]);
 
-        if ($Laeufer->wasRecentlyCreated){
-
+        if ($Laeufer->wasRecentlyCreated) {
             $Startnummer->delete();
 
             return redirect(url('/laeufer'))->with([
-               'type'   => "success",
-               'Meldung'    => "Läufer wurde angemeldet."
+                'type'   => 'success',
+                'Meldung'    => 'Läufer wurde angemeldet.',
             ]);
         }
     }
-
 
     /**
      * Show the form for editing the specified resource.
@@ -98,7 +95,7 @@ class LaeuferController extends Controller
     public function edit(Laeufer $laeufer)
     {
         return view('laeufer.edit', [
-           "Laeufer"=> $laeufer->load(['team', 'sponsorings', 'sponsorings.sponsor', 'sponsorings.projects', 'sponsorings.sponsorable'])
+            'Laeufer'=> $laeufer->load(['team', 'sponsorings', 'sponsorings.sponsor', 'sponsorings.projects', 'sponsorings.sponsorable']),
         ]);
     }
 
@@ -112,9 +109,10 @@ class LaeuferController extends Controller
     public function update(Request $request, Laeufer $laeufer)
     {
         $laeufer->update($request->all());
+
         return redirect(url('laeufer'))->with([
-           "type"   => "success",
-           "Meldung"    => "Daten wurden geändert."
+            'type'   => 'success',
+            'Meldung'    => 'Daten wurden geändert.',
         ]);
     }
 
@@ -129,15 +127,16 @@ class LaeuferController extends Controller
         //
     }
 
-    public function addTeam(Laeufer $laeufer){
-        if (!auth()->user()->can('edit laeufer')  and $laeufer->verwaltet_von != auth()->user()->id){
+    public function addTeam(Laeufer $laeufer)
+    {
+        if (! auth()->user()->can('edit laeufer') and $laeufer->verwaltet_von != auth()->user()->id) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
-        if (auth()->user()->can('edit teams')){
+        if (auth()->user()->can('edit teams')) {
             $teams = Teams::query()->orderBy('name')->get();
         } else {
             $teams = Teams::query()
@@ -148,36 +147,36 @@ class LaeuferController extends Controller
                 ->get();
         }
 
-        return view('laeufer.addTeam',[
+        return view('laeufer.addTeam', [
             'laeufer'   => $laeufer,
-            'teams' => $teams->load('laeufer')
+            'teams' => $teams->load('laeufer'),
         ]);
     }
 
-    public function storeTeam(Laeufer $laeufer, addTeamRequest $request){
-
+    public function storeTeam(Laeufer $laeufer, addTeamRequest $request)
+    {
         $Team = Teams::find($request->team_id);
-        $laeufer->team_id =$Team->id ;
+        $laeufer->team_id = $Team->id;
         $laeufer->save();
 
-        if ($Team->verwaltet_von != auth()->user()->id){
+        if ($Team->verwaltet_von != auth()->user()->id) {
             Mail::to($Team->besitzer->email)->bcc('daniel.roehrich@esz-radebeul.de')->queue(new AddLaeuferToTeam($Team->besitzer->name, $laeufer->name, $Team->name));
         }
 
         return redirect(url('laeufer'))->with([
-           "type"   => "success",
-           "Meldung"    => __("Läufer wurde dem Team hinzugefügt.")
+            'type'   => 'success',
+            'Meldung'    => __('Läufer wurde dem Team hinzugefügt.'),
         ]);
     }
 
-    public function removeTeam(Laeufer $laeufer){
-
+    public function removeTeam(Laeufer $laeufer)
+    {
         $laeufer->team_id = null;
         $laeufer->save();
 
         return redirect()->back()->with([
-           "type"   => "success",
-           "Meldung"    => __("Läufer wurde aus Team entfernt.")
+            'type'   => 'success',
+            'Meldung'    => __('Läufer wurde aus Team entfernt.'),
         ]);
     }
 }
