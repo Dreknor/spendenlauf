@@ -26,14 +26,11 @@ class HomeController extends Controller
     {
         $repository = new SpendenlaufRepository();
 
-        $sponsoring = Sponsoring::all();
-        $sponsoring->load('sponsorable', 'sponsor', 'projects');
-
         return view('home', [
             'Laeufer'=>  $repository->anzahlLauefer(),
             'Teams'=> $repository->anzahlTeams(),
             'Sponsoren'=> $repository->anzahlSponsoren(),
-            'Spenden'   => $sponsoring->sum('spende'),
+            'Spenden'   => $repository->spendensumme('spende'),
         ]);
     }
 }

@@ -25,7 +25,7 @@
                                 <div class="row">
                                     <div class="col">
                                         <p class="alert alert-info">
-                                            <b>Hinweis: </b> Teams, die öffentlich sind, können von anderen läufern gesehen und diesen beigetreten werden. Bei nicht öffentlichen Teams muss der Ersteller des teams auch alle läufer anmelden um diese in das team aufnehmen zu können.
+                                            <b>Hinweis: </b> Teams, die öffentlich sind, können von anderen Läufern gesehen und diesen beigetreten werden. Bei nicht öffentlichen Teams muss der Ersteller des Teams auch alle Läufer anmelden um diese in das Team aufnehmen zu können.
                                         </p>
                                     </div>
                                 </div>

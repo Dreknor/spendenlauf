@@ -23,6 +23,13 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+
+        \App\Model\User::create([
+           'vorname' => 'Admin',
+           'nachname' => config('app.name'),
+           'email' => env('MAIL_FROM_ADDRESS'),
+            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random())
+        ]);
     }
 
     /**

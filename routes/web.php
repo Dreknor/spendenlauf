@@ -11,6 +11,8 @@
 |
 */
 
+use Illuminate\Support\Facades\Route;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -22,7 +24,7 @@ Route::get('user/{user_id}/sendVerification', 'UserController@sendVerification')
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['verified'])->group(function () {
     Route::resource('laeufer', 'LaeuferController');
     Route::resource('teams', 'TeamsController');
     Route::resource('sponsoren', 'SponsorController');

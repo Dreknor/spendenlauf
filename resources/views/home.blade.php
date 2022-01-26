@@ -106,12 +106,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-2 col-sm-4">
+                        <div class="col-md-3 col-sm-12">
                             <b>
                                 Schritt 1:
                             </b>
                         </div>
-                        <div class="col-md-4 col-sm-8">
+                        <div class="col-md-9 col-sm-12">
                             <a href="{{url('/laeufer')}}" class="btn  btn-block btn-outline-info">
                                 <i class="fas fa-running"></i>
                                 {{__('Läufer anmelden')}}
@@ -119,25 +119,25 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-2 col-sm-4">
+                        <div class="col-md-3 col-sm-12">
                             <b>
                                 Schritt 2 (optional):
                             </b>
                         </div>
-                        <div class="col-md-4 col-sm-8">
+                        <div class="col-md-9 col-sm-12">
                             <a href="{{url('/teams')}}" class="btn btn-block btn-outline-info">
                                 <i class="fas fa-user-friends"></i>
-                                {{__('Teams anlegen und Läufer eintragen')}}
+                                    {{__('Teams verwalten')}}
                             </a>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-2 col-sm-4">
+                        <div class="col-md-3 col-sm-12">
                             <b>
                                 Schritt 3:
                             </b>
                         </div>
-                        <div class="col-md-4 col-sm-8">
+                        <div class="col-md-9 col-sm-12">
                             <a href="{{url('/sponsoren')}}" class="btn btn-block  btn-outline-info">
                                 <i class="fas fa-hand-holding-usd"></i>
                                 {{__('Spender erfassen')}}
@@ -145,12 +145,12 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-2 col-sm-4">
+                        <div class="col-md-3 col-sm-12">
                             <b>
                                 Schritt 4:
                             </b>
                         </div>
-                        <div class="col-md-4 col-sm-8">
+                        <div class="col-md-9 col-sm-12">
                                 <a href="{{url('/sponsorings')}}" class="btn btn-block  btn-outline-info">
                                     <i class="fas fa-euro-sign"></i>
                                     {{__('Spenden erstellen')}}

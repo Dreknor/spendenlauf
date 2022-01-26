@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Model\Laeufer;
 use App\Model\Sponsor;
+use App\Model\Sponsoring;
 use App\Model\Teams;
 
 class SpendenlaufRepository
@@ -21,5 +22,11 @@ class SpendenlaufRepository
     public function anzahlTeams()
     {
         return Teams::all()->count();
+    }
+
+    public function spendensumme(){
+        $sponsoring = Sponsoring::all();
+
+        return $sponsoring->sum('spende');
     }
 }
