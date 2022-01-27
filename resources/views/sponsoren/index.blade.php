@@ -17,10 +17,12 @@
                     </div>
                     <div class="col-md-2 col-sm-6 content-center">
                         @can('send mail')
-                        <a href="{{url('sponsor/sendMail/all')}}" class="btn btn-warning">
-                            <i class="far fa-paper-plane"></i>
-                            {{__('Mailing versenden')}}
-                        </a>
+                            @if(Carbon\Carbon::now()->gt(config('config.spendenlauf.date')))
+                                <a href="{{url('sponsor/sendMail/all')}}" class="btn btn-warning">
+                                    <i class="far fa-paper-plane"></i>
+                                    {{__('Mailing versenden')}}
+                                </a>
+                            @endif
                         @endcan
                     </div>
                 </div>
