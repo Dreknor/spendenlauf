@@ -105,7 +105,7 @@ class UserController extends Controller
     public function sendVerification($user_id)
     {
         $user = User::find($user_id);
-        ddd($user->sendEmailVerificationNotification());
+        $user->sendEmailVerificationNotification();
 
         return redirect()->back()->with([
             'type'   => 'success',
