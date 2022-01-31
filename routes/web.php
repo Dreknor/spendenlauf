@@ -21,7 +21,7 @@ Route::get('/', function () {
 Route::get('/email/resend', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
 
-    return back()->with('message', 'Link wurde versandt!');
+    return redirect(url('/'))->with('message', 'Link wurde versandt!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
 Route::get('projects', 'ProjectsController@index');
