@@ -11,11 +11,19 @@
 |
 */
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/email/resend', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+
+    return back()->with('message', 'Link wurde versandt!');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
 Route::get('projects', 'ProjectsController@index');
 
 Auth::routes(['verify' => true]);
