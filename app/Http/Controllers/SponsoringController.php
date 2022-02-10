@@ -100,7 +100,7 @@ class SponsoringController extends Controller
 
         $sponsoring->save();
 
-        if (count($request->projects) > 0) {
+        if (!is_null($request->projects) and count($request->projects) > 0) {
             $sponsoring->projects()->sync($request->projects);
         } else {
             $sponsoring->projects()->sync(Projects::all());
