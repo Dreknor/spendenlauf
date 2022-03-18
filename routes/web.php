@@ -58,11 +58,12 @@ Route::middleware(['verified'])->group(function () {
         Route::get('export/laeufer', 'ExportController@laeufer');
         Route::get('export/sponsoren', 'ExportController@sponsoren');
         Route::get('export/projects', 'ExportController@projects');
+        Route::get('import/runden', 'ImportController@import');
+        Route::post('import/runden', 'ImportController@importFile');
     });
 
     Route::group(['middleware' => ['permission:send mail']], function () {
         Route::get('sponsor/sendMail/{sponsor}', 'SponsorController@sendMail');
-        Route::get('import/runden', 'ImportController@import');
-        Route::post('import/runden', 'ImportController@importFile');
+
     });
 });
