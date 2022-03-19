@@ -7,6 +7,11 @@
                 <h5 class="card-title">
                     {{__('neue Spende erstellen')}}
                 </h5>
+                <p>
+                    <small>
+                        30% der Spenden werden für Hilfsprojekte im Rahmen der Ukraine-Krise genutzt.
+                    </small>
+                </p>
             </div>
             <div class="card-body">
                 <form action="{{url('sponsorings')}}" class="form-horizontal" method="post">
@@ -79,6 +84,12 @@
                                 </label>
                             </div>
                         @endforeach
+                        <div class="">
+                            <label class="form-check-label">
+                                <input type="checkbox" id="ukraine" name="ukraine" readonly checked>
+                                Unterstützung Ukraine
+                            </label>
+                        </div>
                     </div>
                     <div class="form-row">
                         <button type="submit" class="btn btn-success btn-block collapse" id="btn-save">{{__('Spende anlegen')}}</button>
