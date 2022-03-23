@@ -114,7 +114,7 @@
                         <div class="col-md-9 col-sm-12">
                             <a href="{{url('/laeufer')}}" class="btn  btn-block btn-outline-info">
                                 <i class="fas fa-running"></i>
-                                {{__('LäuferIn anmelden')}}
+                                {{__('Läufer*In anmelden')}}
                             </a>
                         </div>
                     </div>
@@ -140,7 +140,7 @@
                         <div class="col-md-9 col-sm-12">
                             <a href="{{url('/sponsoren')}}" class="btn btn-block  btn-outline-info">
                                 <i class="fas fa-hand-holding-usd"></i>
-                                {{__('SpenderIn erfassen')}}
+                                {{__('Spender*In erfassen')}}
                             </a>
                         </div>
                     </div>
