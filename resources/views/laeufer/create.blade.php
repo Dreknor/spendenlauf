@@ -84,7 +84,7 @@
                             </div>
 
                             <div class="col-md-10 col-sm-10">
-                                <label for="geschlecht" class="">Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) mit den <a href="https://spendenlauf-radebeul.de/teilnahmebedingungen.pdf" target="_blank">Teilnahmebedingungen</a> und dem <a href="https://spendenlauf-radebeul.de/Datenschutz.pdf" target="_blank">Datenschutz</a> einverstanden ist.</label>
+                                <label for="geschlecht" class="">Ich bestätige, dass der Läufer/ die Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) mit den <a href="https://spendenlauf-radebeul.de/teilnahmebedingungen.pdf" target="_blank">Teilnahmebedingungen</a> und dem <a href="https://spendenlauf-radebeul.de/Datenschutz.pdf" target="_blank">Datenschutz</a> einverstanden ist.</label>
                             </div>
                         </div>
                         <div class="form-group row">
@@ -93,13 +93,13 @@
                             </div>
 
                             <div class="col-md-10 col-sm-10">
-                                <label for="bilder" class="">Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) das Fotografieren und die Verwendung der Fotos gemäß <a href="https://spendenlauf-radebeul.de/Bildrechte.pdf" target="_blank">Fotofreigabe</a> genehmigt.</label>
+                                <label for="bilder" class="">Ich bestätige, dass der Läufer/der Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß <a href="https://spendenlauf-radebeul.de/Bildrechte.pdf" target="_blank">Fotofreigabe</a> genehmigt.</label>
                             </div>
                         </div>
 
                         <div class=" ">
                             <button type="submit" class="btn btn-success btn-block">
-                                {{__('Läufer anmelden')}}
+                                {{__('Anmelden')}}
                             </button>
                         </div>
                     </form>

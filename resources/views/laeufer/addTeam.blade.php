@@ -7,12 +7,12 @@
                 <h5 class="card-title">
                     {{__('Läufer - Team - Zuordnung')}}
                 </h5>
-                <p class="card-subtitle mb-2 text-muted">{{__('Welchem Team soll folgender Läufer zugeordnet werden:')}} {{$laeufer->name}}</p>
+                <p class="card-subtitle mb-2 text-muted">{{__('Welchem Team soll folgende/r Läufer/in zugeordnet werden:')}} {{$laeufer->name}}</p>
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
                     <p>
-                        {{__('Hinweis:')}} {{__('Fügen Sie den Läufer einem anderen, offenen Team hinzu, wird der Ersteller des Team darüber informiert.')}}
+                        {{__('Hinweis:')}} {{__('Fügen Sie den Läufer/die Läuferin einem anderen, offenen Team hinzu, wird der Ersteller des Team darüber informiert.')}}
                     </p>
                 </div>
                 <form class="form-horizontal" action="{{url("laeufer/$laeufer->id/addTeam")}}" method="post">
@@ -29,7 +29,7 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <button type="submit" class="btn btn-success btn-block">{{__('Läufer zuordnen')}}</button>
+                            <button type="submit" class="btn btn-success btn-block">{{__('zuordnen')}}</button>
                         </div>
                     </div>
                 </form>

@@ -95,7 +95,7 @@
                                         </div>
 
                                         <div class="col-md-10 col-sm-10">
-                                            <label for="geschlecht" class="">{{ __('Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) mit den Teilnahmebedingungen einverstanden ist.') }}</label>
+                                            <label for="geschlecht" class="">{{ __('Ich bestätige, dass der Läufer / die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) mit den Teilnahmebedingungen einverstanden ist.') }}</label>
                                         </div>
                                     </div>
                                     <div class="form-group row">
@@ -104,7 +104,7 @@
                                         </div>
 
                                         <div class="col-md-10 col-sm-10">
-                                            <label for="bilder" class="">{{ __('Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) das Fotografieren und die Verwendung der Fotos gemäß Fotofreigabe genehmigt.') }}</label>
+                                            <label for="bilder" class="">{{ __('Ich bestätige, dass der Läufer/die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß Fotofreigabe genehmigt.') }}</label>
                                         </div>
                                     </div>
 

@@ -98,7 +98,7 @@
                 @endif
                 <div class="card-body">
                     <p>
-                        Schön, dass sie die Projekte in und für Radebeul unterstützen. Sie können sich im Menüpunkt "Projekte" eine Übersicht über die unterstützten projekte verschaffen.
+                        Schön, dass Sie die Projekte in und für Radebeul unterstützen. Sie können sich im Menüpunkt "Projekte" eine Übersicht über die unterstützten Projekte verschaffen.
                     </p>
                     <p>
                         Bitte gehen Sie wie folgt vor:
@@ -114,7 +114,7 @@
                         <div class="col-md-9 col-sm-12">
                             <a href="{{url('/laeufer')}}" class="btn  btn-block btn-outline-info">
                                 <i class="fas fa-running"></i>
-                                {{__('Läufer anmelden')}}
+                                {{__('LäuferIn anmelden')}}
                             </a>
                         </div>
                     </div>
@@ -127,7 +127,7 @@
                         <div class="col-md-9 col-sm-12">
                             <a href="{{url('/teams')}}" class="btn btn-block btn-outline-info">
                                 <i class="fas fa-user-friends"></i>
-                                    {{__('Teams verwalten')}}
+                                    {{__('Team verwalten')}}
                             </a>
                         </div>
                     </div>
@@ -140,7 +140,7 @@
                         <div class="col-md-9 col-sm-12">
                             <a href="{{url('/sponsoren')}}" class="btn btn-block  btn-outline-info">
                                 <i class="fas fa-hand-holding-usd"></i>
-                                {{__('Spender erfassen')}}
+                                {{__('SpenderIn erfassen')}}
                             </a>
                         </div>
                     </div>
