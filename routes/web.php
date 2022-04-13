@@ -15,8 +15,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+
 });
+
+
+
+Route::get('stats', [\App\Http\Controllers\StatsController::class, 'stats']);
+
 
 Route::get('/email/resend', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
