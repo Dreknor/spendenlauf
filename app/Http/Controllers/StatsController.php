@@ -11,11 +11,13 @@ class StatsController extends Controller
 
         $repository = new SpendenlaufRepository();
 
-        return view('stats', [
+        return response()->view('stats', [
             'Laeufer'=>  $repository->anzahlLauefer(),
             'Teams'=> $repository->anzahlTeams(),
             'Sponsoren'=> $repository->anzahlSponsoren(),
             'Spenden'   => $repository->spendensumme('spende'),
-        ]);
+        ])
+            ->header('Content-Security-Policy', config('cors.Content-Security-Policy'))
+            ->header('X-Frame-Options', config('cors.X-Frame-Options'));
     }
 }
