@@ -122,7 +122,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <b>
-                                    {{__('Spendenlauf 2019')}}
+                                    {{__('Spendenlauf')}} {{config('config.spendenlauf.date')->format('Y')}}
                                 </b>
                             </div>
                             <div class="card-body">

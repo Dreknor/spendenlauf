@@ -2,7 +2,7 @@
 
 
 {{optional($sponsor)->firmenname}}<br>
-{{$sponsor->vorname}} {{$sponsor->nachname}}<br>
+{{optional($sponsor)->vorname}} {{optional($sponsor)->nachname}}<br>
 {{$sponsor->strasse}}<br>
 {{$sponsor->plz}} {{$sponsor->ort}}
 
@@ -29,13 +29,17 @@ Bitte beachten Sie, dass 30% der Spendensummer für Hilfsprojekt im Rahmen der U
 
 @endcomponent
 
-Bitte überweisen Sie, falls noch nicht geschehen, den Betrag auf das Konto:
+Um die Abrechnungen zu vereinfachen, überweisen Sie Ihren Beitrag bitte (falls noch nicht geschehen) auf das Konto des Schulvereins und wir leiten die Gelder dann an die Projekte weiter.
 
-#DasKonto fehlt noch
+Evangelischer Schulverein Radebeul e.V.
+Sparkasse Meißen
+IBAN: DE77 8505 5000 3000 0401 10
+BIC: SOLADES1MEI
+Verwendungszweck: Spendenlauf2022
 
 
 Sollten Sie eine Spendenbescheinigung benötigen, so teilen Sie uns dies bitte mit.
-Fotos vom Spendenlauf und aktuelle Informationen des Schulzentrums finden Sie in den
+Fotos vom Spendenlauf und aktuelle Informationen finden Sie in den
 nächsten Tagen unter <a href="https://www.radebeuler-spendenlauf.de">www.radebeuler-spendenlauf.de</a>.
 Wir freuen uns, wenn Sie unserem Projekt verbunden bleiben
 

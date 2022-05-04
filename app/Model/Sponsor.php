@@ -27,7 +27,10 @@ class Sponsor extends Model
     public function getNameAttribute($value)
     {
         if (! is_null($this->firmenname)) {
-            return  "$this->firmenname ($this->vorname $this->nachname)";
+            if (!is_null($this->vorname) and !is_null($this->nachname)){
+                return  "$this->firmenname ($this->vorname $this->nachname)";
+            }
+            return  $this->firmenname;
         }
 
         return $this->vorname.' '.$this->nachname;
