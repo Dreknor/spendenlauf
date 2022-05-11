@@ -16,9 +16,9 @@ class TeamsController extends Controller
     public function index()
     {
         if (auth()->user()->can('edit teams')) {
-            $teams = Teams::query()->orderBy('name')->paginate(30);
+            $teams = Teams::query()->orderBy('name')->get();
         } else {
-            $teams = auth()->user()->teams()->paginate(10);
+            $teams = auth()->user()->teams()->get();
         }
 
         $teams->load(['laeufer', 'sponsorings', 'sponsorings.sponsorable', 'besitzer']);

@@ -79,17 +79,24 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="6">
-                                        {{$laeufer->links()}}
-                                    </td>
-                                </tr>
-                            </tfoot>
                     </table>
                     </div>
                 @endif
             </div>
         </div>
     </div>
+@endsection
+@push('js')
+    <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready( function () {
+            $('table').DataTable();
+        } );
+    </script>
+
+
+@endpush
+
+@section('css')
+    <link href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet" />
 @endsection

@@ -27,9 +27,9 @@ class LaeuferController extends Controller
     public function index()
     {
         if (auth()->user()->can('edit laeufer')) {
-            $laeufer = Laeufer::query()->orderBy('nachname')->paginate(40);
+            $laeufer = Laeufer::query()->orderBy('nachname')->get();
         } else {
-            $laeufer = auth()->user()->laeufer()->orderBy('nachname')->paginate(20);
+            $laeufer = auth()->user()->laeufer()->orderBy('nachname')->get();
         }
 
         $laeufer->load(['team', 'besitzer']);

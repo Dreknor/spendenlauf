@@ -96,7 +96,8 @@
                     Um ein Filtern nach Altersgruppe durchzuführen muss einfach die entsprechende Altersgruppe in das Suchfeld eingegeben werden. Es stehen folgende Altersgruppen zur Verfügung:<br>
                 </p>
                 <ul>
-                    <li>0-10</li>
+                    <li>0-5</li>
+                    <li>6-10</li>
                     <li>11-14</li>
                     <li>14-18</li>
                     <li>19-30</li>
@@ -139,8 +140,10 @@
                                                 {{$laeufer->runden}}
                                             </td>
                                             <td class="text-right">
-                                                @if($laeufer->age <= 10)
-                                                  0-10
+                                                @if($laeufer->age < 6)
+                                                  0-5
+                                                @elseif($laeufer->age >=6 and $laeufer->age <= 10)
+                                                  6-10
                                                 @elseif($laeufer->age >10 and $laeufer->age <= 14)
                                                   11-14
                                                 @elseif($laeufer->age >14 and $laeufer->age <= 18)

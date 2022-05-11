@@ -18,14 +18,20 @@
 
     <div class="row">
         @foreach($sponsoring->projects as $project)
-            <div class="col-md-2 col-sm-6">
+            <div class="col-auto">
                 @if($project->getFirstMedia('images') != null)
-                    <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="img-fluid" alt="{{$project->name}}"  title="Diese Spende unterstützt das das Projekt {{$project->name}}">
+                    <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="img" width="100px" alt="{{$project->name}}"  title="Diese Spende unterstützt das das Projekt {{$project->name}}">
                 @else
                     <small class="badge badge-primary" title="Diese Spende unterstützt das das Projekt {{$project->name}}">{{$project->name}}</small>
                 @endif
             </div>
         @endforeach
+        <div class="col-auto ml-1">
+            @if(config('spendenlauf.help_name') != "")
+                <small class="badge badge-info ml-1 p-2" title="Diese Spende unterstützt das das Projekt {{config('spendenlauf.help_name')}}">{{config('spendenlauf.help_name')}}</small>
+            @endif
+        </div>
+
     </div>
 
 </li>

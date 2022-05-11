@@ -24,15 +24,21 @@
                                 </div>
                             @endcan
                         </div>
-
                     </div>
+                    @if(config('spendenlauf.help_name') != "")
+                        <div class="card-body border-bottom">
+                            <p class="">
+                                {{config('spendenlauf.help_percent')}} % werden für das Hilfsprojekt {{config('spendenlauf.help_name')}} verwendet.
+                            </p>
+                        </div>
+                    @endif
                     @if(count($projects) > 0)
                         <div class="card-body">
                             <div class="card-columns">
                                 @foreach($projects as $project)
                                         <div class="card border">
                                             @if($project->getFirstMedia('images') != null)
-                                                <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="card-img-top" alt="...">
+                                                <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="card-img-top" alt="">
                                             @endif
                                             <div class="card-body">
                                                 <h5 class="card-title">{{$project->name}}</h5>
