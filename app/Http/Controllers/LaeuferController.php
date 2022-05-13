@@ -11,6 +11,7 @@ use App\Model\Teams;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaeuferController extends Controller
 {
@@ -92,13 +93,43 @@ class LaeuferController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *
      *
      * @param  \App\Model\Laeufer  $laeufer
      * @return \Illuminate\Http\Response
      */
+    public function bescheinigung(Laeufer $laeufer)
+    {
+        if ($laeufer->verwaltet_von != auth()->id() and !auth()->user()->can('edit laeufer')){
+            return back()->with([
+                'type'   => 'danger',
+                'Meldung'    => 'Berechtigung fehlt.',
+            ]);
+        }
+
+        $pdf = PDF::loadView('laeufer.bescheinigung', [
+            'laeufer' => $laeufer
+        ]);
+        return $pdf->download('Bescheinigung.pdf');
+
+    }
+
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Model\Laeufer  $laeufer
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function edit(Laeufer $laeufer)
     {
+        if ($laeufer->verwaltet_von != auth()->id() and !auth()->user()->can('edit laeufer')){
+            return back()->with([
+                'type'   => 'danger',
+                'Meldung'    => 'Berechtigung fehlt.',
+            ]);
+        }
+
         return view('laeufer.edit', [
             'Laeufer'=> $laeufer->load(['team', 'sponsorings', 'sponsorings.sponsor', 'sponsorings.projects', 'sponsorings.sponsorable']),
         ]);

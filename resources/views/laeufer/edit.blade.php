@@ -17,7 +17,8 @@
                                     {{__('Läuferdaten')}}
                                 </b>
                             </div>
-                            <div class="card-body">
+                            @if(\Carbon\Carbon::today() < config('config.spendenlauf.date'))
+                                <div class="card-body">
                                 <form action="{{url('laeufer/'.$Laeufer->id)}}" method="post" class="form-horizontal">
                                     @csrf
                                     @method('put')
@@ -116,6 +117,7 @@
                                 </form>
 
                             </div>
+                            @endif
                         </div>
                     </div>
                     <div class="col-md-6 col-sm-12">
@@ -134,6 +136,15 @@
                                        {{__('Runden:')}} @if(is_null($Laeufer->runden)) 0 @else {{$Laeufer->runden}} @endif
                                     </div>
                                 </div>
+                                @if(!is_null($Laeufer->runden) and \Carbon\Carbon::today() >= config('config.spendenlauf.date'))
+                                    <div class="row">
+                                        <div class="col">
+                                            <a href="{{url('laeufer/'.$Laeufer->id.'/bestaetigung')}}" class="btn btn-outline-info">
+                                                <i class="fa fa-file-pdf pl-2"></i> Bestätigung Teilnahme
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <div class="card">

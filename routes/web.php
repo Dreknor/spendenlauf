@@ -44,6 +44,7 @@ Route::middleware(['verified'])->group(function () {
     Route::resource('sponsorings', 'SponsoringController');
 
     Route::get('laeufer/{laeufer}/addTeam', 'LaeuferController@addTeam');
+    Route::get('laeufer/{laeufer}/bestaetigung', 'LaeuferController@bescheinigung');
     Route::post('laeufer/{laeufer}/addTeam', 'LaeuferController@storeTeam');
     Route::put('laeufer/{laeufer}/removeTeam', 'LaeuferController@removeTeam');
 
