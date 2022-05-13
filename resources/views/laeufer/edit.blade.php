@@ -65,7 +65,7 @@
                                         <label for="geburtsdatum" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Geburtsdatum') }}</label>
 
                                         <div class="col-md-8 col-sm-7">
-                                            <input id="geburtsdatum" type="date" class="form-control @error('geburtsdatum') is-invalid @enderror" name="geburtsdatum" value="{{$Laeufer->geburtsdatum->format('Y-m-d')}}" required autocomplete="geburtsdatum" autofocus>
+                                            <input id="geburtsdatum" type="date" class="form-control @error('geburtsdatum') is-invalid @enderror" name="geburtsdatum" value="{{optional($Laeufer->geburtsdatum)->format('Y-m-d')}}" autocomplete="geburtsdatum" autofocus>
                                             @error('geburtsdatum')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>

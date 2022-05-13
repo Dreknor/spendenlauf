@@ -26,7 +26,7 @@ class CreateLaeuferRequest extends FormRequest
         return [
             'vorname'   => 'required|string',
             'nachname'   => 'required|string',
-            'geburtsdatum'   => 'required|date',
+            'geburtsdatum'   => 'nullable|date',
             'geschlecht'   => 'required|boolean',
             'datenschutz'   => 'required',
             'bilder'   => 'required',

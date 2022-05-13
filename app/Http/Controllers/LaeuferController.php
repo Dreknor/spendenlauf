@@ -73,7 +73,7 @@ class LaeuferController extends Controller
             'geschlecht'    => $Input['geschlecht'],
             'startnummer'   => $Startnummer->startnummer,
             'email'         => $Input['email'],
-            'verwaltet_von' => auth()->user()->id,
+            'verwaltet_von' => auth()->id(),
         ]);
 
         if ($Laeufer->wasRecentlyCreated) {
@@ -81,9 +81,14 @@ class LaeuferController extends Controller
 
             return redirect(url('/laeufer'))->with([
                 'type'   => 'success',
-                'Meldung'    => 'Läufer wurde angemeldet.',
+                'Meldung'    => 'Läufer wurde angemeldet. Startnummer: '.$Laeufer->startnummer,
             ]);
         }
+
+        return redirect(url('/laeufer'))->with([
+            'type'   => 'warning',
+            'Meldung'    => 'Läufer bereits vorhanden. Startnummer: '.$Laeufer->startnummer,
+        ]);
     }
 
     /**

@@ -22,7 +22,10 @@ class Laeufer extends Model
      */
     public function getAgeAttribute()
     {
-        return Carbon::parse($this->attributes['geburtsdatum'])->age;
+        if ($this->attributes['geburtsdatum'] != null){
+            return Carbon::parse($this->attributes['geburtsdatum'])->age;
+        }
+        return null;
     }
 
     public function getNameAttribute($value)
