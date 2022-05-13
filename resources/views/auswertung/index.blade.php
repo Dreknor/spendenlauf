@@ -140,7 +140,9 @@
                                                 {{$laeufer->runden}}
                                             </td>
                                             <td class="text-right">
-                                                @if($laeufer->age < 6)
+                                                @if($laeufer->age == null)
+                                                    keine Angabe
+                                                @elseif($laeufer->age < 6)
                                                   0-5
                                                 @elseif($laeufer->age >=6 and $laeufer->age <= 10)
                                                   6-10
