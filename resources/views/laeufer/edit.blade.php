@@ -205,14 +205,12 @@
                                     <p>
                                         {{__('Der Läufer ist in keinem Team')}}
                                     </p>
-                                    <p>
                                         <a href="{{url('laeufer/'.$Laeufer->id.'/addTeam')}}" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-user-friends d-block d-md-none"></i>
                                             <div class="d-none d-md-block">
                                                 {{__('Team hinzufügen')}}
                                             </div>
                                         </a>
-                                    </p>
                                 @endif
                             </div>
                         </div>
