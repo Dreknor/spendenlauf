@@ -117,6 +117,34 @@
                                 </form>
 
                             </div>
+
+                            @else
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Name:
+                                            </b>
+                                            {{$Laeufer->vorname}} {{$Laeufer->nachname}}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Geschlecht:
+                                            </b>
+                                            @if($Laeufer->geschlecht == 1) männlich @else weiblich @endif
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Geburtsdatum:
+                                            </b>
+                                            {{optional($Laeufer->geburtsdatum)->format('d.m.Y')}}
+                                        </div>
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -176,6 +204,14 @@
                                 @else
                                     <p>
                                         {{__('Der Läufer ist in keinem Team')}}
+                                    </p>
+                                    <p>
+                                        <a href="{{url('laeufer/'.$Laeufer->id.'/addTeam')}}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-user-friends d-block d-md-none"></i>
+                                            <div class="d-none d-md-block">
+                                                {{__('Team hinzufügen')}}
+                                            </div>
+                                        </a>
                                     </p>
                                 @endif
                             </div>
