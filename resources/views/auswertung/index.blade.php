@@ -79,7 +79,7 @@
                                     </div>
                                     <div class="col-md-9">
                                         <div class="numbers">
-                                            {{$Sponsoren}} {{__('Spender')}}
+                                            {{$SponsorenCount}} {{__('Spender')}}
                                         </div>
                                     </div>
                                 </div>
@@ -127,7 +127,7 @@
                                             <th>Name</th>
                                             <th class="text-right">Runden</th>
                                             <th class="text-right">Altersgruppe</th>
-                                            <th class="text-right">Spendensummer</th>
+                                            <th class="text-right">Spendensumme</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -229,6 +229,48 @@
                     </div>
                 </div>
             </div>
+            <div class="card-body border-top">
+                <div class="row">
+                    <div class="col-md-12 col-sm-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>
+                                    {{__('Auswertung Sponsoren')}}
+                                </h5>
+                                <button onclick="generatePDFSponsor()"class="btn btn-info pull-right">Download as PDF</button>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped" id="sponsortable">
+                                    <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th></th>
+                                        <th class="text-right">Sponsorings</th>
+                                        <th class="text-right">Spendensumme</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($sponsoren as $sponsor)
+                                        <tr>
+                                            <td>
+                                                {{$sponsor->name}}
+                                            </td>
+                                            <td></td>
+                                            <td class="text-right">
+                                                {{$sponsor->sponsorings->count()}}
+                                            </td>
+                                            <td class="text-right">
+                                                {{number_format($sponsor->spendensumme,2)}} €
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -237,11 +279,10 @@
     <script>
         $(document).ready( function () {
             $('table').DataTable({
-                "order": [[ 1, 'desc' ], [ 3, 'asc' ]]
+                "order": [[ 1, 'desc' ], [ 3, 'asc' ]],
             });
         } );
     </script>
-
 
 @endpush
 

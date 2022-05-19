@@ -27,10 +27,11 @@ class AuswertungsController extends Controller
         return view('auswertung.index', [
             'Laeufer'=>  $laeufers->count(),
             'Teams'=> $teams->count(),
-            'Sponsoren'=> $sponsoren->count(),
+            'SponsorenCount'=> $sponsoren->count(),
             'Spenden'   => $sponsoring->sum('spende'),
             'laeuferRunden'   => $laeufers,
             'teamsRunden'   => $teams,
+            'sponsoren'     => $sponsoren
         ]);
     }
 }
