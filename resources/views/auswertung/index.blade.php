@@ -237,7 +237,6 @@
                                 <h5>
                                     {{__('Auswertung Sponsoren')}}
                                 </h5>
-                                <button onclick="generatePDFSponsor()"class="btn btn-info pull-right">Download as PDF</button>
                             </div>
                             <div class="card-body">
                                 <table class="table table-striped" id="sponsortable">
