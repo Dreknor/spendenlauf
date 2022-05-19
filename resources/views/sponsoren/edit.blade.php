@@ -176,7 +176,7 @@
                             <b>
                                 {{__('Spende: ')}}
                             </b>
-                            {{number_format($sponsor->Spendensumme,2)}} €
+                            {{number_format($sponsor->spendensumme,2)}} €
                         </p>
                     </div>
 

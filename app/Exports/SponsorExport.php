@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Model\Projects;
 use App\Model\Sponsor;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -10,9 +11,16 @@ use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 
 class SponsorExport implements FromCollection, WithStrictNullComparison, ShouldAutoSize, WithHeadings
 {
+    private $projects;
+
+    public function __construct()
+    {
+        $this->projects = Projects::all();
+    }
+
     public function headings(): array
     {
-        return [
+        $arr = [
             'id',
             'Anrede',
             'Nachname',
@@ -23,8 +31,14 @@ class SponsorExport implements FromCollection, WithStrictNullComparison, ShouldA
             'Plz',
             'Ort',
             'Telefon',
-            'Spendensumme',
+            'Spendensumme (gesamt)',
         ];
+
+        foreach ($this->projects as $project){
+            array_push($arr, $project->name);
+        }
+
+        return $arr;
     }
 
     /**
@@ -36,9 +50,21 @@ class SponsorExport implements FromCollection, WithStrictNullComparison, ShouldA
         $berechneteSponsoren = [];
 
         foreach ($Sponsoren as $sponsor) {
+            $projekte = $sponsor->Spendenprojects;
+
             $spendensumme = $sponsor->spendensumme;
             $sponsor = $sponsor->toArray();
             $sponsor['spendensumme'] = $spendensumme;
+
+            foreach ($this->projects as $name) {
+               if (array_key_exists($name->name, $projekte)){
+                   $sponsor[$name->name] = $projekte[$name->name];
+               } else {
+                   $sponsor[$name->name] = 0;
+               }
+            }
+
+
 
             $berechneteSponsoren[] = $sponsor;
         }
