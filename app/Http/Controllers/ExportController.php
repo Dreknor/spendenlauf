@@ -45,8 +45,6 @@ class ExportController extends Controller
         $projectArray = [];
         $Spende = 0;
 
-        $SpendeHilfsprojekt = 0;
-
         foreach ($projects as $project) {
             $projectArray[$project->id] = [
                 'name'  => $project->name,
@@ -66,12 +64,6 @@ class ExportController extends Controller
             foreach ($team->sponsorings as $sponsoring) {
                 $Spende = $sponsoring->spende($runden);
 
-               if(config('spendenlauf.help_name') != "") {
-                   $abzug = floor(($Spende *100)/100*config('spendenlauf.help_percent'))/100;
-                   $SpendeHilfsprojekt += $abzug;
-                   $Spende -= $abzug;
-               }
-
                 $spendenaufteilung = 0;
 
                 foreach ($sponsoring->projects as $project) {
@@ -90,11 +82,6 @@ class ExportController extends Controller
 
             foreach ($laeufer->sponsorings as $sponsoring) {
                 $Spende = $sponsoring->spende($runden);
-                if(config('spendenlauf.help_name') != "") {
-                    $abzug = floor(($Spende *100)/100*config('spendenlauf.help_percent'))/100;
-                    $SpendeHilfsprojekt += $abzug;
-                    $Spende -= $abzug;
-                }
 
                 $spendenaufteilung = 0;
 
@@ -108,10 +95,7 @@ class ExportController extends Controller
                 }
             }
         }
-            $projectArray[config('spendenlauf.help_name')] = [
-                'name' => config('spendenlauf.help_name'),
-                'Spendensumme' => $SpendeHilfsprojekt
-            ] ;
+
         return Excel::download(new ProjectExport($projectArray), 'Projektspenden.xlsx');
     }
 }

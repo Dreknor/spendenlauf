@@ -66,4 +66,26 @@ class Sponsor extends Model
     {
         return $this->sponsorings->sum('spende');
     }
+
+    public function getSpendenprojectsAttribute()
+    {
+        $array = [];
+
+
+        foreach ($this->sponsorings as $sponsoring){
+            $sponsoringProjectsArray = $sponsoring->SpendeProjekt;
+
+            foreach ($sponsoringProjectsArray as $key => $value){
+                if (array_key_exists($key, $array)){
+                    $array[$key] += $value;
+                } else {
+                    $array[$key] = $value;
+                }
+
+            }
+
+        }
+        return $array;
+    }
+
 }

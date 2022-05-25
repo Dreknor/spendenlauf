@@ -69,4 +69,31 @@ class Sponsoring extends Model
 
         return (float) $Summe;
     }
+
+
+    public function getSpendeProjektAttribute($Runde = null)
+    {
+        if (is_null($Runde)) {
+            $Runde = $this->sponsorable->runden;
+        }
+
+        $Rundenbetrag = $Runde * $this->rundenBetrag;
+
+        $Summe = $this->festBetrag + $Rundenbetrag;
+
+        if (! is_null($this->maxBetrag)) {
+            if ($Summe > $this->maxBetrag) {
+                $Summe = $this->maxBetrag;
+            }
+        }
+
+        $ergebnis = [];
+
+        foreach ($this->projects as $project){
+            $ergebnis[$project->name] = number_format($Summe / $this->projects->count(),2);
+        }
+
+        return $ergebnis;
+    }
+
 }
