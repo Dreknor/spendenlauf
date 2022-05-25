@@ -65,7 +65,7 @@ class LaeuferController extends Controller
     {
         $Input = $request->all();
 
-        $Startnummer = Startnummer::query()->first();
+        $Startnummer = Startnummer::orderByDesc('startnummer')->first();
         $Laeufer = Laeufer::firstOrCreate([
             'vorname'    =>  $Input['vorname'],
             'nachname'    =>  $Input['nachname'],

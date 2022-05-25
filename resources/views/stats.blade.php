@@ -56,7 +56,7 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="numbers text-info">
-                                    {{$Laeufer}} {{__('Läufer')}}
+                                    {{$Laeufer}} {{__('Läufer')}} (aktive: {{$aktiveLaeufer}})
                                 </div>
                             </div>
                         </div>
@@ -93,6 +93,60 @@
                             <div class="col-md-9">
                                 <div class="numbers">
                                     {{$Sponsoren}} {{__('Spender')}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="icon-big icon-warning text-center text-info">
+                                    <i class="fa fa-sync fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="numbers text-info">
+                                    {{$gesamtRunden}} {{__('Runden')}} (Ø {{round($gesamtRunden/ $aktiveLaeufer, 1)}})
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card text-warning">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="icon-big icon-warning text-center">
+                                    <i class="fas fa-user-friends fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="numbers">
+                                    bester Läufer: {{$besterLaeufer->runden}} Runden
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card text-danger">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="icon-big icon-warning text-center">
+                                    <i class="fas fa-hand-holding-usd fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="numbers">
+                                    bestes Team: {{$bestesTeam}} {{__('Runden')}}
                                 </div>
                             </div>
                         </div>

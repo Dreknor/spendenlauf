@@ -67,6 +67,6 @@ class Sponsoring extends Model
             }
         }
 
-        return $Summe;
+        return (float) $Summe;
     }
 }
