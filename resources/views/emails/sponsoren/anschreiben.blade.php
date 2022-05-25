@@ -41,10 +41,10 @@ IBAN: DE77 8505 5000 3000 0401 10<br>
 BIC: SOLADES1MEI<br>
 Verwendungszweck: Spendenlauf2022<br>
 
-@if($Spendensumme > 300)
+@if($Spendensumme > 200)
 Sollten Sie eine Spendenbescheinigung benötigen, so teilen Sie uns dies bitte mit.
 @else
-Bei Spenden bis 300€ akzeptieren die Finanzämter den Überweisungsbeleg als Spendennachweis für die Steuererklärung.
+Bei Spenden bis 200€ akzeptieren die Finanzämter den Überweisungsbeleg als Spendennachweis für die Steuererklärung.
 @endif
 
 Fotos vom Spendenlauf und aktuelle Informationen finden Sie in den
