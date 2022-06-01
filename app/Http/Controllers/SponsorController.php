@@ -161,7 +161,7 @@ class SponsorController extends Controller
         $zaehler = 0;
 
         foreach ($sponsors as $sponsor) {
-            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0) {
+            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
                 $zaehler++;
                 Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme()));
                 $sponsor->update(['mail_send' => Carbon::now()]);
