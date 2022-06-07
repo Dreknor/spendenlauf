@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Sponsoring extends Model
 {
@@ -54,7 +55,10 @@ class Sponsoring extends Model
     public function getSpendeAttribute($Runde = null)
     {
         if (is_null($Runde)) {
-            $Runde = $this->sponsorable->runden;
+            $sponsoring = $this;
+            $Runde = Cache::remember('sponsoring_'.$this->id.'_runde', 6000, function() use ($sponsoring){
+                return $this->sponsorable->runden;
+            });
         }
 
         $Rundenbetrag = $Runde * $this->rundenBetrag;

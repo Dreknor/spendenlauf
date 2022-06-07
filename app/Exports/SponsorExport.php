@@ -27,6 +27,7 @@ class SponsorExport implements FromCollection, WithStrictNullComparison, ShouldA
             'Vorname',
             'Firmenname',
             'Email',
+            'Mail versandt',
             'Anschrift',
             'Plz',
             'Ort',

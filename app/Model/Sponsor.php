@@ -14,9 +14,6 @@ class Sponsor extends Model
 
     protected $appends = ['spendensumme'];
 
-    protected $casts = [
-        'mail_send' => 'datetime'
-    ];
 
 
     public function users()
@@ -74,10 +71,13 @@ class Sponsor extends Model
 
         foreach ($this->sponsorings as $sponsoring){
             $sponsoringProjectsArray = $sponsoring->SpendeProjekt;
-
             foreach ($sponsoringProjectsArray as $key => $value){
                 if (array_key_exists($key, $array)){
-                    $array[$key] += $value;
+                    try {
+                        $array[$key] += floatval($value);
+                    } catch (\Exception $exception){
+                        $array[$key] += floatval($value);
+                    }
                 } else {
                     $array[$key] = $value;
                 }
