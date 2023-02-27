@@ -45,7 +45,7 @@
                             </div>
                             <div class="col-md-9">
                                 <div class="numbers">
-                                    {{number_format($Spenden,2)}} € {{__('Spendenerlös')}}
+                                    {{number_format($Spenden,2)}} € {{__('Spendenerlös aktuell')}}
                                 </div>
                             </div>
                         </div>
