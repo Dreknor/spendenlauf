@@ -31,6 +31,13 @@
                                 {{__('unsere Projekte')}}
                             </a>
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <a href="{{config('config.datenschutz.link')}}" target="_blank">
+                                Teilnahmebedingungen und dem Datenschutz
+                            </a>
+                        </div>
 
                     </div>
 
