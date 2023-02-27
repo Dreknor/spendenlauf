@@ -137,7 +137,7 @@
 
                         <div class="form-group row">
                             <div class="col-md-2 col-sm-2  text-md-right">
-                                <input type="checkbox" name="datenschutz" required>
+                                <input type="checkbox" name="datenschutz" required checked>
                             </div>
 
                             <div class="col-md-10 col-sm-10">

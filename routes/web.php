@@ -20,7 +20,7 @@ Route::get('/', function () {
 
 
 
-Route::get('stats', [\App\Http\Controllers\StatsController::class, 'stats']);
+Route::get('stats/{full?}', [\App\Http\Controllers\StatsController::class, 'stats']);
 
 
 Route::get('/email/resend', function (Request $request) {

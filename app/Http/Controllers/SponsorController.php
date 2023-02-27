@@ -149,15 +149,8 @@ class SponsorController extends Controller
             ]);
         }
 
-        if (Carbon::now()->lessThan(Carbon::createFromFormat('d.m.Y', '15.06.2019'))) {
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'  => __('Erst ab 15.06.2020 möglich'),
-            ]);
-        }
-
         if ($Sponsor == 'all') {
-            $sponsors = Sponsor::all();
+            $sponsors = Sponsor::where('mail_send', null)->get();
         } else {
             $sponsors = Sponsor::where('id', $Sponsor)->get();
         }
@@ -168,9 +161,10 @@ class SponsorController extends Controller
         $zaehler = 0;
 
         foreach ($sponsors as $sponsor) {
-            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0) {
+            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
                 $zaehler++;
                 Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme()));
+                $sponsor->update(['mail_send' => Carbon::now()]);
             }
         }
 

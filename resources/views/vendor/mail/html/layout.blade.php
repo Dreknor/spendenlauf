@@ -6,7 +6,7 @@
 </head>
 <body>
     <style>
-        @media only screen and (max-width: 600px) {
+        @media only screen and (max-width: 800px) {
             .inner-body {
                 width: 100% !important;
             }
@@ -16,7 +16,7 @@
             }
         }
 
-        @media only screen and (max-width: 500px) {
+        @media only screen and (max-width: 700px) {
             .button {
                 width: 100% !important;
             }
@@ -32,7 +32,7 @@
                     <!-- Email Body -->
                     <tr>
                         <td class="body" width="100%" cellpadding="0" cellspacing="0">
-                            <table class="inner-body" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+                            <table class="inner-body" align="center" width="900" cellpadding="0" cellspacing="0" role="presentation">
                                 <!-- Body content -->
                                 <tr>
                                     <td class="content-cell">

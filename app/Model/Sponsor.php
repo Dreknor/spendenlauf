@@ -8,11 +8,13 @@ class Sponsor extends Model
 {
     protected $table = 'sponsors';
 
-    protected $visible = ['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon', 'id'];
+    protected $visible = ['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon', 'id', 'mail_send'];
 
-    protected $fillable = ['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon'];
+    protected $fillable = ['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon', 'mail_send'];
 
     protected $appends = ['spendensumme'];
+
+
 
     public function users()
     {
@@ -36,6 +38,22 @@ class Sponsor extends Model
         return $this->vorname.' '.$this->nachname;
     }
 
+    public function getAnredeBriefAttribute($value){
+        if (! is_null($this->firmenname)) {
+            return 'Sehr geehrte Damen und Herren,';
+        }
+
+        if ($this->anrede == "Herr"){
+            return 'Sehr geehrter Herr '. $this->nachname.',';
+        }
+
+        if ($this->anrede == "Frau"){
+            return 'Sehr geehrte Frau '. $this->nachname.',';
+        }
+
+        return 'Sehr geehrte Damen und Herren,';
+    }
+
     public function sponsorings()
     {
         return $this->hasMany(Sponsoring::class, 'sponsor_id');
@@ -53,10 +71,13 @@ class Sponsor extends Model
 
         foreach ($this->sponsorings as $sponsoring){
             $sponsoringProjectsArray = $sponsoring->SpendeProjekt;
-
             foreach ($sponsoringProjectsArray as $key => $value){
                 if (array_key_exists($key, $array)){
-                    $array[$key] += $value;
+                    try {
+                        $array[$key] += floatval($value);
+                    } catch (\Exception $exception){
+                        $array[$key] += floatval($value);
+                    }
                 } else {
                     $array[$key] = $value;
                 }

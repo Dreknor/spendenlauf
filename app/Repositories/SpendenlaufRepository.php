@@ -6,29 +6,33 @@ use App\Model\Laeufer;
 use App\Model\Sponsor;
 use App\Model\Sponsoring;
 use App\Model\Teams;
+use Illuminate\Support\Facades\Cache;
 
 class SpendenlaufRepository
 {
     public function anzahlLauefer()
     {
-        return Laeufer::all()->count();
+        return Laeufer::count();
     }
 
     public function anzahlSponsoren()
     {
-        return Sponsor::all()->count();
+        return Sponsor::count();
     }
 
     public function anzahlTeams()
     {
-        return Teams::all()->count();
+        return Teams::count();
     }
 
     public function spendensumme(){
-        $sponsoring = Sponsoring::all();
-
-        return $sponsoring->sum('spende');
+        return Cache::remember('sponsorings', 6000, function (){
+            $sponsoring = Sponsoring::with('sponsorable')->all();
+            return $sponsoring->sum('spende');
+        });
     }
+
+
     public function spendensummeProjects(){
         $sponsorings = Sponsoring::all();
 
