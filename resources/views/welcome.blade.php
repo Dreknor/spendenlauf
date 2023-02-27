@@ -34,13 +34,10 @@
                     </div>
                     <div class="row h-50  justify-content-center align-items-center">
                         <div class="col-12">
-                            <a href="{{config('config.datenschutz.link')}}" target="_blank"  class="btn btn-outline-dark">
-                                Teilnahmebedingungen und dem Datenschutz
+                            <a href="{{config('config.datenschutz.link')}}" target="_blank"  class="btn btn-info">
+                                Datenschutz
                             </a>
                         </div>
-
                     </div>
-
-
                 </div>
 @endsection
