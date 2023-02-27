@@ -40,7 +40,7 @@ class StatsController extends Controller
             'gesamtRunden'    => $laeufer->sum('runden'),
             'aktiveLaeufer' => $laeufer->where('runden', '>', 0)->count(),
             'besterLaeufer' => $laeufer->first(),
-            'bestesTeam'    => $teams->first()->name,
+            'bestesTeam'    => $teams->first()?->name,
             'laeufers'      => $laeufer,
             'teams' => $teams
         ])
