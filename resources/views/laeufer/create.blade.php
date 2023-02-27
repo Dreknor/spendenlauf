@@ -95,7 +95,7 @@
                             </div>
 
                             <div class="col-md-10 col-sm-10">
-                                <label for="bilder" class="">Ich bestätige, dass der Läufer/der Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß <a href="https://spendenlauf-radebeul.de/Bildrechte.pdf" target="_blank">Fotofreigabe</a> genehmigt.</label>
+                                <label for="bilder" class="">Ich bestätige, dass der Läufer/der Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß Datenschutz genehmigt.</label>
                             </div>
                         </div>
 

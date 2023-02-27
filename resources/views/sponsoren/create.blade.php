@@ -141,7 +141,7 @@
                             </div>
 
                             <div class="col-md-10 col-sm-10">
-                                <label for="datennutzung" class="">{{ __('Ich bestätige, dass der Spendermit der Verarbeitung seiner Daten einverstanden ist.') }}</label>
+                                <label for="datennutzung" class="">{{ __('Ich bestätige, dass der Spender mit der Verarbeitung seiner Daten einverstanden ist.') }}</label>
                             </div>
                         </div>
 
