@@ -68,9 +68,10 @@
                                                         <small class="badge badge-info ml-1 p-2" title="Diese Spende unterstützt das das Projekt {{$project->name}}">{{$project->name}}</small>
                                             @endforeach
                                             @if(config('spendenlauf.help_name') != "")
-                                                    <small class="badge badge-info ml-1 p-2" title="Diese Spende unterstützt das das Projekt {{config('spendenlauf.help_name')}}">{{config('spendenlauf.help_name')}}</small>
-
-                                                @endif
+                                                <small class="badge badge-info ml-1 p-2" title="Diese Spende unterstützt das das Projekt {{config('spendenlauf.help_name')}}">
+                                                    {{config('spendenlauf.help_name')}}
+                                                </small>
+                                            @endif
                                         </div>
                                     </td>
                                     <td>

@@ -83,7 +83,7 @@ class SponsoringController extends Controller
     {
         $sponsoring = new Sponsoring();
         $sponsoring->fill($request->all());
-        $sponsoring->verwaltet_von = auth()->user()->id;
+        $sponsoring->verwaltet_von = auth()->id();
         $sponsoring->sponsor_id = $request->sponsor;
 
         if ($request->type == 'Team') {

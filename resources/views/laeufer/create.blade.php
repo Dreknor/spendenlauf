@@ -84,7 +84,9 @@
                             </div>
 
                             <div class="col-md-10 col-sm-10">
-                                <label for="geschlecht" class="">Ich bestätige, dass der Läufer/ die Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) mit den <a href="https://spendenlauf-radebeul.de/teilnahmebedingungen.pdf" target="_blank">Teilnahmebedingungen</a> und dem <a href="https://spendenlauf-radebeul.de/Datenschutz.pdf" target="_blank">Datenschutz</a> einverstanden ist.</label>
+                                <label for="datenschutz">
+                                    Ich bestätige, dass der Läufer/ die Läuferin (bzw. der Sorgeberechtigte des Läufers/der Läuferin) mit den <a href="{{config('config.datenschutz.link')}}" target="_blank">Teilnahmebedingungen und dem Datenschutz </a>einverstanden ist.
+                                </label>
                             </div>
                         </div>
                         <div class="form-group row">
