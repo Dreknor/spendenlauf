@@ -106,6 +106,7 @@
                     </div>
                 </div>
             </div>
+            @if($gesamtRunden > 0 and $aktiveLaeufer > 0)
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
@@ -117,15 +118,14 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="numbers text-info">
-                                    @if($gesamtRunden > 0 and $aktiveLaeufer > 0)
                                          {{$gesamtRunden}} {{__('Runden')}} (Ø {{round($gesamtRunden/ $aktiveLaeufer, 1)}})
-                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            @endif
         </div>
         @if(\Carbon\Carbon::now()->greaterThan(config('config.spendenlauf.date')))
             <div class="row">
