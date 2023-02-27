@@ -63,7 +63,7 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="numbers text-info">
-                                    {{$Laeufer}} {{__('Läufer')}} (aktive: {{$aktiveLaeufer}})
+                                    {{$Laeufer}} {{__('Läufer')}}
                                 </div>
                             </div>
                         </div>
