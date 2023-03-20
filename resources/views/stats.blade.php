@@ -52,7 +52,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
@@ -70,7 +70,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <div class="card text-warning">
                     <div class="card-body">
                         <div class="row">
@@ -88,7 +88,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <div class="card text-danger">
                     <div class="card-body">
                         <div class="row">
@@ -100,6 +100,24 @@
                             <div class="col-md-9">
                                 <div class="numbers">
                                     {{$Sponsoren}} {{__('Spender')}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card text-danger">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="icon-big icon-warning text-center">
+                                    <i class="fas fa-hand-holding-usd fa-2x"></i>/<i class="fas fa-running fa-2x"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="numbers">
+                                    ⌀ {{$runden_durchschnitt_sponsoring}}€ / {{__('Runde')}}
                                 </div>
                             </div>
                         </div>
@@ -282,6 +300,7 @@
         }).draw();
 
         var teamsTable = $('#teamsTable').DataTable({
+            "searching": false,
             columnDefs: [
                 {
                     searchable: false,

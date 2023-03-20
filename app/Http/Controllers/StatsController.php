@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Model\Laeufer;
 use App\Model\Sponsor;
+use App\Model\Sponsoring;
 use App\Model\Teams;
 use App\Repositories\SpendenlaufRepository;
 use Illuminate\Http\Request;
@@ -31,6 +32,10 @@ class StatsController extends Controller
             return Sponsor::count();
         });
 
+        $runden_durchschnitt = Cache::remember('runden_durchschnitt', 60000, function () use ($repository){
+            return round(Sponsoring::where('rundenBetrag', '>', 0)->sum('rundenBetrag')/Sponsoring::count(),2);
+        });
+
 
         return response()->view('stats', [
             'Laeufer'=>  $laeufer->count(),
@@ -42,7 +47,8 @@ class StatsController extends Controller
             'besterLaeufer' => $laeufer->first(),
             'bestesTeam'    => $teams->first()?->name,
             'laeufers'      => $laeufer,
-            'teams' => $teams
+            'teams' => $teams,
+            'runden_durchschnitt_sponsoring' => $runden_durchschnitt
         ])
             ->header('Content-Security-Policy', config('cors.Content-Security-Policy'))
             ->header('X-Frame-Options', config('cors.X-Frame-Options'));
