@@ -38,10 +38,10 @@
                                 @foreach($projects as $project)
                                         <div class="card border">
                                             <div class="card-body">
-                                                <div class="row">
-                                                    <p class="small text-muted">Spenden: {{$project->sponsorings->count()}}
+                                                    <p class="small text-muted">
+                                                        Spenden: {{$project->sponsorings->count()}}
                                                     </p>
-                                                </div>
+
                                                 <h5 class="card-title">{{$project->name}}</h5>
                                                 <p class="card-text">{!! $project->description !!}</p>
 
