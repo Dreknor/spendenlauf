@@ -15,24 +15,24 @@ class StatsController extends Controller
     public function stats($full = false){
         $repository = new SpendenlaufRepository();
 
-        $teams = Cache::remember('teams', 60000, function (){
+        $teams = Cache::remember('teams', 600, function (){
             return Teams::with(['laeufer', 'laeufer.sponsorings'])->get()->sortByDesc('runden');
         });
 
-        $laeufer = Cache::remember('laeufer', 60000, function (){
+        $laeufer = Cache::remember('laeufer', 600, function (){
             return Laeufer::with('sponsorings')->get()->sortByDesc('runden');
         });
 
 
-        $spendensumme = Cache::remember('spendensumme', 60000, function () use ($repository){
+        $spendensumme = Cache::remember('spendensumme', 600, function () use ($repository){
             return $repository->spendensumme();
         });
 
-        $sponsoren = Cache::remember('sponsoren', 60000, function () use ($repository){
+        $sponsoren = Cache::remember('sponsoren', 600, function () use ($repository){
             return Sponsor::count();
         });
 
-        $runden_durchschnitt = Cache::remember('runden_durchschnitt', 60000, function () use ($repository){
+        $runden_durchschnitt = Cache::remember('runden_durchschnitt', 600, function () use ($repository){
             return round(Sponsoring::where('rundenBetrag', '>', 0)->sum('rundenBetrag')/Sponsoring::count(),2);
         });
 
