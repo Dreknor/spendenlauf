@@ -34,27 +34,26 @@
                     @endif
                     @if(count($projects) > 0)
                         <div class="card-body">
-                            <div class="card-columns">
+                            <div class="card-deck">
                                 @foreach($projects as $project)
                                         <div class="card border">
-                                            @if($project->getFirstMedia('images') != null)
-                                                <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="card-img-top" alt="">
-                                            @endif
                                             <div class="card-body">
+                                                    <p class="small text-muted">
+                                                        Spenden: {{$project->sponsorings->count()}}
+                                                    </p>
+
                                                 <h5 class="card-title">{{$project->name}}</h5>
                                                 <p class="card-text">{!! $project->description !!}</p>
-                                            </div>
-                                            <div class="card-footer">
-                                                <div class="row">
-                                                    <p class="small text-muted">Spenden: {{$project->sponsorings->count()}}
-                                                    </p>
-                                                </div>
+
+
+                                                @if($project->getFirstMedia('images') != null)
+                                                    <img src="{{url('/image/'.$project->getFirstMedia('images')->id)}}" class="card-img-top" alt="">
+                                                @endif
                                                 @can('edit projekt')
                                                     <a href="{{url("projects/$project->id/edit")}}" class="btn btn-warning btn-block">
                                                         {{__('bearbeiten')}}
                                                     </a>
                                                 @endcan
-
                                             </div>
                                         </div>
                                 @endforeach
