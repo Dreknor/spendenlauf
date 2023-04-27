@@ -47,7 +47,7 @@ class TeamsController extends Controller
     public function store(CreateTeamRequest $request)
     {
         $team = new Teams();
-        $team->fill($request->all());
+        $team->fill($request->validated());
         $team->verwaltet_von = auth()->user()->id;
 
         $team->save();
