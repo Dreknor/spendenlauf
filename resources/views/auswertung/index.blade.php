@@ -149,7 +149,7 @@
                                                 @elseif($laeufer->age >10 and $laeufer->age <= 14)
                                                   11-14
                                                 @elseif($laeufer->age >14 and $laeufer->age <= 18)
-                                                    14-18
+                                                    15-18
                                                 @elseif($laeufer->age >18 and $laeufer->age <= 30)
                                                     19-30
                                                 @elseif($laeufer->age >30 and $laeufer->age <= 40)
