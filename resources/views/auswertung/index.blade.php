@@ -107,9 +107,7 @@
                     <li>61-70</li>
                     <li>ab 71</li>
                 </ul>
-                </ul>
 
-                </p>
             </div>
             <div class="card-body border-top">
                 <div class="row">

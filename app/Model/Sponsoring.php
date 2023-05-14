@@ -56,9 +56,7 @@ class Sponsoring extends Model
     {
         if (is_null($Runde)) {
             $sponsoring = $this;
-            $Runde = Cache::remember('sponsoring_'.$this->id.'_runde', 6000, function() use ($sponsoring){
-                return $this->sponsorable->runden;
-            });
+            $Runde = $this->sponsorable->runden;
         }
 
         $Rundenbetrag = $Runde * $this->rundenBetrag;
