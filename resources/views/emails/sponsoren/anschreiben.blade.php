@@ -29,26 +29,24 @@ Bitte beachten Sie, dass 30% der Spendensumme für Hilfsprojekte im Rahmen der U
     @php($Spendensumme+=$sponsoring->spende)
     @endforeach
     |   |  |  |   |  | {{number_format($Spendensumme,2)}} €|
-
-
 @endcomponent
 
 
 @if($sponsoring_projects > 0)
-        Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Kirchspiel in der Lößnitz.
+Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Kirchspiel in der Lößnitz.
 
-        Kirchspiel in der Lößnitz
-        DE06 3506 0190 1667 2090 28,
-        KD Bank für Kirche und Diakonie, Kassenverwaltung Dresden
-        Verwendungszweck (wichtig): 1082 Spendenlauf Lößnitz
+Kirchspiel in der Lößnitz
+DE06 3506 0190 1667 2090 28,
+KD Bank für Kirche und Diakonie, Kassenverwaltung Dresden
+Verwendungszweck (wichtig): 1082 Spendenlauf Lößnitz
 @else
-        Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Schulvereins und wir leiten die Gelder dann an die Projekte weiter.
+Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Schulvereins und wir leiten die Gelder dann an die Projekte weiter.
 
-        Evangelischer Schulverein Radebeul e.V.
-        Sparkasse Meißen
-        IBAN: DE77 8505 5000 3000 0401 10
-        BIC: SOLADES1MEI
-        Verwendungszweck: Spendenlauf2023
+Evangelischer Schulverein Radebeul e.V.
+Sparkasse Meißen
+IBAN: DE77 8505 5000 3000 0401 10
+BIC: SOLADES1MEI
+Verwendungszweck: Spendenlauf2023
 @endif
 
 
