@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSponsorRequest;
 use App\Mail\SponsorAnschreiben;
 use App\Model\Laeufer;
+use App\Model\Projects;
 use App\Model\Sponsor;
 use App\Model\Teams;
 use App\Repositories\SpendenlaufRepository;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Mail;
@@ -160,10 +162,18 @@ class SponsorController extends Controller
         $repository = new SpendenlaufRepository();
         $zaehler = 0;
 
+        $projekte = Projects::all();
+
         foreach ($sponsors as $sponsor) {
             if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
                 $zaehler++;
-                Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme()));
+
+
+                $sponsoring_projects = $sponsor->sponsorings()->whereHas('projects', function (Builder $query){
+                    return $query->where('projects.id', '==', 1);
+                })->count();
+
+                    Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
                 $sponsor->update(['mail_send' => Carbon::now()]);
             }
         }
