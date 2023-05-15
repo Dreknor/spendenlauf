@@ -50,6 +50,9 @@
                                 <th>{{__('Ersteller')}}</th>
                             @endcan
                             <th></th>
+                            @can('send mail')
+                                <th></th>
+                            @endcan
                             </thead>
                             <tbody>
                             @foreach($sponsoren as $sponsor)
@@ -82,6 +85,26 @@
                                             </div>
                                         </a>
                                     </td>
+                                    @can('send mail')
+                                        @if($sponsor->email != "")
+                                            @if($sponsor->mail_send == null)
+                                                <td>
+                                                    <a href="{{url("sponsor/sendMail/$sponsor->id")}}" class="btn btn-warning">
+                                                        <i class="far fa-paper-plane"></i>
+                                                        {{__('Mailing versenden')}}
+                                                    </a>
+                                                </td>
+                                            @else
+                                                <td>
+                                                    E-Mail versandt am {{$sponsor->mail_send}}
+                                                </td>
+                                            @endif
+                                        @else
+                                            <td>
+                                                Keine Email
+                                            </td>
+                                        @endif
+                                    @endcan
                                 </tr>
                             @endforeach
                             </tbody>
