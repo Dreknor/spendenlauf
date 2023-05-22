@@ -18,7 +18,7 @@ vielen Dank, dass Sie durch Ihre Sach- oder Geldspende unsere Projekte in Radebe
 Der Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}} war ein großer Erfolg. {{$countLaeufer}} Läufer haben {{number_format($spendensumme,2)}} € erlaufen. Wir sind überwältigt, dass sich so viele Menschen an
 dieser Aktion beteiligt haben. An dieser Stelle bedanken wir uns ganz herzlich für Ihre Unterstützung.
 <br>
-Bitte beachten Sie, dass 30% der Spendensumme für Hilfsprojekte im Rahmen der Ukrainekrise verwendet werden.
+Bitte beachten Sie, dass 10% der Spendensumme für das Radebeuler Kinder- und Frauenschutzhaus verwendet werden.
 
 @component('mail::table')
     @php($Spendensumme=0)
