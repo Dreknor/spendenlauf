@@ -170,8 +170,9 @@ class SponsorController extends Controller
 
 
                 $sponsoring_projects = $sponsor->sponsorings()->whereHas('projects', function (Builder $query){
-                    return $query->where('projects.id', '==', 1);
+                    return $query->where('projects.id', '!=', 4);
                 })->count();
+
 
                     Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
                 $sponsor->update(['mail_send' => Carbon::now()]);
