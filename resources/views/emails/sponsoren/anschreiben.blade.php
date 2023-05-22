@@ -7,7 +7,7 @@
 {{$sponsor->plz}} {{$sponsor->ort}}
 <br>
 <br>
-# Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}}
+#Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}}
 <br>
 <br>
 
@@ -34,7 +34,7 @@ Bitte beachten Sie, dass 10% der Spendensumme für das Radebeuler Kinder- und Fr
 
 @if($sponsoring_projects == 0)
 Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Kirchspiel in der Lößnitz.
-<br>
+<br><br>
 Kirchspiel in der Lößnitz<br>
 DE06 3506 0190 1667 2090 28,<br>
 KD Bank für Kirche und Diakonie, Kassenverwaltung Dresden<br>
