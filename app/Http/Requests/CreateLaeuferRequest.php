@@ -30,6 +30,8 @@ class CreateLaeuferRequest extends FormRequest
             'geschlecht'   => 'nullable|string',
             'datenschutz'   => 'required',
             'bilder'   => 'required',
+            'team_id'   => 'sometimes|nullable|exists:teams,id',
+            'teamname'   => 'sometimes|nullable|string|unique:teams,name',
         ];
     }
 }

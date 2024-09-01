@@ -48,11 +48,20 @@ class LaeuferController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return
      */
     public function create()
     {
-        return view('laeufer.create');
+        if (!auth()->user()->can('edit laeufer|edit teams')) {
+            $teams = auth()->user()->teams()->orderBy('name')->get();
+        } else {
+            $teams = Teams::query()->orderBy('name')->get();
+        }
+
+        return view('laeufer.create',
+        [
+            'teams' => $teams,
+        ]);
     }
 
     /**
@@ -63,7 +72,7 @@ class LaeuferController extends Controller
      */
     public function store(CreateLaeuferRequest $request)
     {
-        $Input = $request->all();
+        $Input = $request->validated();
 
         $Startnummer = Startnummer::orderBy('startnummer')->first();
         $Laeufer = Laeufer::firstOrCreate([
@@ -71,14 +80,29 @@ class LaeuferController extends Controller
             'nachname'    =>  $Input['nachname'],
             'geburtsdatum'    => $Input['geburtsdatum'],
         ], [
-            'geschlecht'    => $Input['geschlecht'],
+            'geschlecht'    => $request->geschlecht ?? null,
             'startnummer'   => $Startnummer->startnummer,
-            'email'         => $Input['email'],
+            'email'         => $request->email ?? null,
             'verwaltet_von' => auth()->id(),
         ]);
 
         if ($Laeufer->wasRecentlyCreated) {
             $Startnummer->delete();
+
+            if ($request->team_id) {
+                $Laeufer->team_id =$request->team_id;
+                $Laeufer->save();
+            } elseif ($request->team_name) {
+                $Team = Teams::firstOrCreate([
+                    'name'  => $request->team_name,
+                    'verwaltet_von' => auth()->id(),
+
+                ]);
+                $Laeufer->team_id = $Team->id;
+                $Laeufer->save();
+            }
+
+
 
             return redirect(url('/laeufer'))->with([
                 'type'   => 'success',
