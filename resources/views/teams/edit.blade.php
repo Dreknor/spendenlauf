@@ -42,7 +42,7 @@
                                 <div class="row">
                                     <div class="col-md-12 col-sm-12">
                                         <div class="form-group">
-                                            <label>{{__('Name des Teams')}}</label>
+                                            <label>{{__('offenes Team - jeder kann beitreten?')}}</label>
                                             <select type="text" class="custom-select"  name="open" required>
                                                 <option value="1" @if($team->open ) selected @endif>
                                                     {{__('öffentlich')}}
