@@ -67,8 +67,10 @@
 
                             <div class="col-md-4 col-sm-7">
                                 <select name="geschlecht" class="custom-select @error('geschlecht') is-invalid @enderror">
-                                    <option value="1">{{ __('männlich') }}</option>
-                                    <option value="0">{{ __('weiblich') }}</option>
+                                    <option value=""></option>
+                                    <option value="maennlich">{{ __('männlich') }}</option>
+                                    <option value="weiblich">{{ __('weiblich') }}</option>
+                                    <option value="divers">{{ __('divers') }}</option>
                                 </select>
                                 @error('geschlecht')
                                 <span class="invalid-feedback" role="alert">

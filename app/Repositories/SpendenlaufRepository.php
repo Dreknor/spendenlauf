@@ -26,7 +26,7 @@ class SpendenlaufRepository
     }
 
     public function spendensumme(){
-        return Cache::remember('sponsorings', 6000, function (){
+        return Cache::remember('sponsorings', 60*10, function (){
             $sponsoring = Sponsoring::with('sponsorable')->get();
             return $sponsoring->sum('spende');
         });

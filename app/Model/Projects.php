@@ -16,9 +16,13 @@ class Projects extends Model implements HasMedia
 
     protected $fillable = ['name', 'description'];
 
-    protected $dates = ['created_at', 'updated_at'];
 
     protected $with = ['media'];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     public function sponsorings()
     {

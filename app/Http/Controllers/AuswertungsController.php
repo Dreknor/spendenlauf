@@ -11,11 +11,16 @@ class AuswertungsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:show auswertung');
+        $this->middleware('auth');
+
     }
 
     public function index()
     {
+        if (!auth()->user()->can('show auswertung')) {
+            return redirect()->route('home');
+        }
+
         $laeufers = Laeufer::all();
         $laeufers->load('sponsorings', 'sponsorings', 'sponsorings.sponsorable');
         $teams = Teams::with(['laeufer', 'sponsorings', 'sponsorings.sponsorable', 'sponsorings.projects'])->get();

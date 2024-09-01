@@ -12,5 +12,8 @@ return [
     ],
     "datenschutz" => [
         'link'  => env('DATENSCHUTZ', 'https://www.spendenlauf-radebeul.de/index.php/datenschutz/')
-    ]
+    ],
+    'import' => [
+        'url' => env('IMPORT_URL', null),
+    ],
 ];

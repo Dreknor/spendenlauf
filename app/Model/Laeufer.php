@@ -11,10 +11,11 @@ class Laeufer extends Model
 
     protected $visible = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
 
-    protected $dates = ['created_at', 'updated_at', 'geburtsdatum'];
 
     protected $casts = [
-        'created_at' => 'datetime:Y-m-d',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'geburtsdatum' => 'datetime:Y-m-d',
     ];
 
     /**

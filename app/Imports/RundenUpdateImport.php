@@ -9,9 +9,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class RundenUpdateImport implements ToCollection, WithHeadingRow
 {
-    /**
-     * @param Collection $collection
-     */
+
     public function collection(Collection $collection)
     {
         foreach ($collection as $row) {
