@@ -99,7 +99,7 @@
                     <li>0-5</li>
                     <li>6-10</li>
                     <li>11-14</li>
-                    <li>14-18</li>
+                    <li>15-18</li>
                     <li>19-30</li>
                     <li>31-40</li>
                     <li>41-50</li>
@@ -107,9 +107,7 @@
                     <li>61-70</li>
                     <li>ab 71</li>
                 </ul>
-                </ul>
 
-                </p>
             </div>
             <div class="card-body border-top">
                 <div class="row">
@@ -149,7 +147,7 @@
                                                 @elseif($laeufer->age >10 and $laeufer->age <= 14)
                                                   11-14
                                                 @elseif($laeufer->age >14 and $laeufer->age <= 18)
-                                                    14-18
+                                                    15-18
                                                 @elseif($laeufer->age >18 and $laeufer->age <= 30)
                                                     19-30
                                                 @elseif($laeufer->age >30 and $laeufer->age <= 40)

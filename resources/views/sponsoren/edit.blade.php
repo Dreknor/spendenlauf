@@ -12,17 +12,29 @@
                                     {{__('Spender bearbeiten')}}
                                 </h5>
                             </div>
-                            @can('send mail')
-                                <div class="col-sm-12 col-md-4">
-                                    <div class="pull-right">
-                                        <a href="{{url("sponsor/sendMail/$sponsor->id")}}" class="btn btn-warning">
-                                            <i class="far fa-paper-plane"></i>
-                                            {{__('Mailing versenden')}}
-                                        </a>
-                                    </div>
-                                </div>
-                            @endcan
                         </div>
+                        @if($sponsor->email != "")
+                         <div class="row">
+                            <div class="col-12">
+                                @if($sponsor->mail_send == null)
+                                    @can('send mail')
+                                        <div class="col-sm-12 col-md-4">
+                                            <div class="pull-right">
+                                                <a href="{{url("sponsor/sendMail/$sponsor->id")}}" class="btn btn-warning">
+                                                    <i class="far fa-paper-plane"></i>
+                                                    {{__('Mailing versenden')}}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endcan
+
+                                @else
+                                    E-Mail versandt am {{$sponsor->mail_send}}
+                                @endif
+                            </div>
+
+                        </div>
+                        @endif
 
                     </div>
                     <div class="card-body">
