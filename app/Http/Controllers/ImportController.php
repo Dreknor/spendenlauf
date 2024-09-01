@@ -8,6 +8,7 @@ use App\Model\Laeufer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ImportController extends Controller
@@ -39,8 +40,13 @@ class ImportController extends Controller
         ]);
     }
 
-    public function importFromUrl()
+    public function importFromUrl($test = false)
     {
+
+        if (!config('config.spendenlauf.date')->isToday() && !$test) {
+            Log::info('Kein Spendenlauf heute');
+        }
+
 
         $runden_alt = Laeufer::query()->sum('runden');
 
@@ -49,30 +55,35 @@ class ImportController extends Controller
         $url = config('config.import.url');
 
         if (empty($url)) {
-
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'    => __('URL fehlt'),
-            ]);
+            Log::info('Keine URL angegeben');
         }
 
-        $data = file_get_contents($url);
 
-        $file = 'temp.csv';
-        file_put_contents($file, $data);
-        Excel::import(new RundenUpdate(), $file);
-        unlink($file);
+        try {
+            $data = file_get_contents($url);
+
+            $file = 'temp.csv';
+            file_put_contents($file, $data);
+            Excel::import(new RundenUpdate(), $file);
+            unlink($file);
+        } catch (\Exception $e) {
+            Log::error('Fehler beim Importieren der Runden:');
+            Log::error($e->getMessage());
+        }
+
 
         $runden_neu = Laeufer::query()->sum('runden');
 
         Cache::clear();
         $string = 'Runden wurden aktualisiert. Anzahl der Runden vorher: '.$runden_alt.' Anzahl der Runden nachher: '.$runden_neu;
 
-        return redirect('home')->with([
-            'type'  => 'success',
-            'Meldung'   => __( $string),
-        ]);
+        if ($test) {
+            return $string;
+        } else{
+            Log::info($string);
+        }
 
+        return null;
 
     }
 }

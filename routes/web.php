@@ -66,7 +66,7 @@ Route::middleware(['verified'])->group(function () {
         Route::get('export/projects', 'ExportController@projects');
         Route::get('import/runden', 'ImportController@import');
         Route::post('import/runden', 'ImportController@importFile');
-        Route::get('import/runden/url', 'ImportController@importFromUrl');
+        Route::get('import/runden/url/{test?}', 'ImportController@importFromUrl');
     });
 
     Route::group(['middleware' => ['permission:send mail']], function () {
