@@ -45,6 +45,7 @@ class ImportController extends Controller
 
         if (!config('config.spendenlauf.date')->isToday() && !$test) {
             Log::info('Kein Spendenlauf heute');
+            return null;
         }
 
 
@@ -56,6 +57,7 @@ class ImportController extends Controller
 
         if (empty($url)) {
             Log::info('Keine URL angegeben');
+            return null;
         }
 
 
