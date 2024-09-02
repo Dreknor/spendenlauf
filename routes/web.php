@@ -73,4 +73,11 @@ Route::middleware(['verified'])->group(function () {
         Route::get('sponsor/sendMail/{sponsor}', 'SponsorController@sendMail');
 
     });
+
+    Route::group(['middleware' => ['permission:edit startnummer']], function () {
+        Route::get('startnummern', 'StartnummerController@index');
+        Route::post('startnummern', 'StartnummerController@store');
+        Route::get('startnummern/{startnummer}/delete', 'StartnummerController@destroy');
+
+    });
 });
