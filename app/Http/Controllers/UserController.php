@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Model\Groups;
 use App\Model\User;
 use Illuminate\Http\Request;
@@ -12,7 +11,6 @@ class UserController extends Controller
 {
     public function __construct()
     {
-
     }
 
     /**
@@ -23,8 +21,9 @@ class UserController extends Controller
     public function index()
     {
         $this->middleware('permission:edit user');
+
         return view('user.index', [
-            'users' => User::with('permissions')->get()
+            'users' => User::with('permissions')->get(),
         ]);
     }
 
@@ -35,7 +34,6 @@ class UserController extends Controller
      */
     public function create()
     {
-
     }
 
     /**
@@ -46,8 +44,6 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-
-
     }
 
     /**
@@ -59,12 +55,12 @@ class UserController extends Controller
     public function show(User $user)
     {
         $this->middleware('permission:edit user');
-        return view('user.show',[
-            "user" => $user,
-            'permissions' => Permission::all()
+
+        return view('user.show', [
+            'user' => $user,
+            'permissions' => Permission::all(),
         ]);
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -78,23 +74,21 @@ class UserController extends Controller
         $this->middleware('permission:edit user');
         $user->fill($request->all());
 
-
-        if (auth()->user()->can('edit permission')){
-            $permissions= $request->input('permissions');
+        if (auth()->user()->can('edit permission')) {
+            $permissions = $request->input('permissions');
             $user->syncPermissions($permissions);
         }
 
-
-        if ($user->save()){
+        if ($user->save()) {
             return redirect()->back()->with([
-                "type"   => "success",
-                "Meldung"    => "Daten gespeichert."
+                'type'   => 'success',
+                'Meldung'    => 'Daten gespeichert.',
             ]);
         }
 
         return redirect()->back()->with([
-            "type"   => "danger",
-            "Meldung"    => "Update fehlgeschlagen"
+            'type'   => 'danger',
+            'Meldung'    => 'Update fehlgeschlagen',
         ]);
     }
 
@@ -106,18 +100,16 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-
     }
 
-    public function sendVerification($user_id){
-
+    public function sendVerification($user_id)
+    {
         $user = User::find($user_id);
         $user->sendEmailVerificationNotification();
 
         return redirect()->back()->with([
-            "type"   => "success",
-            "Meldung"    => "E-Mail wurde versandt."
+            'type'   => 'success',
+            'Meldung'    => 'E-Mail wurde versandt.',
         ]);
-
     }
 }

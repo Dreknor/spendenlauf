@@ -3,7 +3,7 @@
                 <div class="container-fluid  h-75">
                     <div class="row h-50 justify-content-center align-items-center">
                                     <h1 class="text-white">
-                                        Radebeuler - Spendenlauf
+                                        Radebeuler Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}}
                                     </h1>
                     </div>
                     <div class="row h-50  justify-content-center align-items-center">
@@ -31,9 +31,13 @@
                                 {{__('unsere Projekte')}}
                             </a>
                         </div>
-
                     </div>
-
-
+                    <div class="row h-50  justify-content-center align-items-center">
+                        <div class="col-12">
+                            <a href="{{config('config.datenschutz.link')}}" target="_blank"  class="btn btn-info">
+                                Datenschutz
+                            </a>
+                        </div>
+                    </div>
                 </div>
 @endsection

@@ -7,6 +7,14 @@
                 <h5 class="card-title">
                     {{__('neue Spende erstellen')}}
                 </h5>
+                @if(config('spendenlauf.help_name') != "")
+                    <p>
+                        <small>
+                            {{config('spendenlauf.help_percent')}}% der Spenden werden für {{config('spendenlauf.help_name')}} genutzt.
+                        </small>
+                    </p>
+                @endif
+
             </div>
             <div class="card-body">
                 <form action="{{url('sponsorings')}}" class="form-horizontal" method="post">
@@ -79,6 +87,14 @@
                                 </label>
                             </div>
                         @endforeach
+                        @if(config('spendenlauf.help_name') != "")
+                            <div class="">
+                                <label class="form-check-label">
+                                    Unterstützung {{config('spendenlauf.help_name')}}
+                                </label>
+                            </div>
+                        @endif
+
                     </div>
                     <div class="form-row">
                         <button type="submit" class="btn btn-success btn-block collapse" id="btn-save">{{__('Spende anlegen')}}</button>

@@ -30,9 +30,9 @@
 <body id="app-layout">
 <div class="sidebar" data-color="white" data-active-color="danger">
     <div class="logo" style="word-wrap: normal;">
-        <a href="https://www.esz-radebeul.de" class="simple-text">
+        <a href="{{config('config.logo.logo')}}" class="simple-text">
             <div class="logo-image-small">
-                <img src="{{asset('img/teamradebeul.svg')}}"  height="150px;" alt="Team Radebeul">
+                <img src="{{asset(config('config.logo.logo'))}}"  width="100%;" alt="Logo">
             </div>
         </a>
     </div>

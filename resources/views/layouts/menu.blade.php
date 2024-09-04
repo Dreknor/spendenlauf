@@ -57,6 +57,14 @@
             </li>
         @endcan
 
+        @can('edit startnummer')
+            <li class="@if(request()->segment(1)=="startnummern") active @endif">
+                <a href="{{url('/startnummern')}}">
+                    <i class="fas fa-list-ol"></i>
+                    <p>Startnummern</p>
+                </a>
+            </li>
+        @endcan
         @can('import export')
             <li class="@if(request()->segment(1)=="Export") active @endif">
                 <a href="{{url('/export/laeufer')}}">

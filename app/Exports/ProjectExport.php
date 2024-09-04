@@ -7,10 +7,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class ProjectExport implements FromCollection, WithHeadings
 {
-
     private $Liste;
 
-    public function __construct(Array $Liste)
+    public function __construct(array $Liste)
     {
         $this->Liste = collect($Liste);
     }
@@ -19,13 +18,13 @@ class ProjectExport implements FromCollection, WithHeadings
     {
         return [
             'Projektname',
-            'Spendenbetrag'
+            'Spendenbetrag',
         ];
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         return $this->Liste;

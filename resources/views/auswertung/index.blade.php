@@ -79,7 +79,7 @@
                                     </div>
                                     <div class="col-md-9">
                                         <div class="numbers">
-                                            {{$Sponsoren}} {{__('Spender')}}
+                                            {{$SponsorenCount}} {{__('Spender')}}
                                         </div>
                                     </div>
                                 </div>
@@ -96,9 +96,10 @@
                     Um ein Filtern nach Altersgruppe durchzuführen muss einfach die entsprechende Altersgruppe in das Suchfeld eingegeben werden. Es stehen folgende Altersgruppen zur Verfügung:<br>
                 </p>
                 <ul>
-                    <li>0-10</li>
+                    <li>0-5</li>
+                    <li>6-10</li>
                     <li>11-14</li>
-                    <li>14-18</li>
+                    <li>15-18</li>
                     <li>19-30</li>
                     <li>31-40</li>
                     <li>41-50</li>
@@ -106,9 +107,7 @@
                     <li>61-70</li>
                     <li>ab 71</li>
                 </ul>
-                </ul>
 
-                </p>
             </div>
             <div class="card-body border-top">
                 <div class="row">
@@ -126,7 +125,7 @@
                                             <th>Name</th>
                                             <th class="text-right">Runden</th>
                                             <th class="text-right">Altersgruppe</th>
-                                            <th class="text-right">Spendensummer</th>
+                                            <th class="text-right">Spendensumme</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -139,12 +138,16 @@
                                                 {{$laeufer->runden}}
                                             </td>
                                             <td class="text-right">
-                                                @if($laeufer->age <= 10)
-                                                  0-10
+                                                @if($laeufer->age == null)
+                                                    keine Angabe
+                                                @elseif($laeufer->age < 6)
+                                                  0-5
+                                                @elseif($laeufer->age >=6 and $laeufer->age <= 10)
+                                                  6-10
                                                 @elseif($laeufer->age >10 and $laeufer->age <= 14)
                                                   11-14
                                                 @elseif($laeufer->age >14 and $laeufer->age <= 18)
-                                                    14-18
+                                                    15-18
                                                 @elseif($laeufer->age >18 and $laeufer->age <= 30)
                                                     19-30
                                                 @elseif($laeufer->age >30 and $laeufer->age <= 40)
@@ -169,7 +172,7 @@
 
                                 </table>
                         </div>
-                    </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -224,6 +227,47 @@
                     </div>
                 </div>
             </div>
+            <div class="card-body border-top">
+                <div class="row">
+                    <div class="col-md-12 col-sm-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>
+                                    {{__('Auswertung Sponsoren')}}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped" id="sponsortable">
+                                    <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th></th>
+                                        <th class="text-right">Sponsorings</th>
+                                        <th class="text-right">Spendensumme</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($sponsoren as $sponsor)
+                                        <tr>
+                                            <td>
+                                                {{$sponsor->name}}
+                                            </td>
+                                            <td></td>
+                                            <td class="text-right">
+                                                {{$sponsor->sponsorings->count()}}
+                                            </td>
+                                            <td class="text-right">
+                                                {{number_format($sponsor->spendensumme,2)}} €
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -232,11 +276,10 @@
     <script>
         $(document).ready( function () {
             $('table').DataTable({
-                "order": [[ 1, 'desc' ], [ 3, 'asc' ]]
+                "order": [[ 1, 'desc' ], [ 3, 'asc' ]],
             });
         } );
     </script>
-
 
 @endpush
 

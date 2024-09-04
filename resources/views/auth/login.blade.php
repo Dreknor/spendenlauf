@@ -7,6 +7,9 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     {{ __('Login') }}
+                    <div class="d-inline pull-right">
+                        <a href="{{url('/register')}}" class="btn btn-sm btn-info">neu registrieren</a>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -47,7 +50,7 @@
                                     <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
 
                                     <label class="form-check-label" for="remember">
-                                        {{ __('Remember Me') }}
+                                        {{ __('Eingeloggt bleiben') }}
                                     </label>
                                 </div>
                             </div>
@@ -61,7 +64,7 @@
 
                                 @if (Route::has('password.request'))
                                     <a class="btn btn-link" href="{{ route('password.request') }}">
-                                        {{ __('Forgot Your Password?') }}
+                                        {{ __('Passwort vergessen?') }}
                                     </a>
                                 @endif
                             </div>

@@ -24,8 +24,10 @@
 
 <body class="index-page sidebar-collapse bodyBg">
 <div class="container-fluid">
-    <a href="{{url('/')}}">
-        <img src="{{asset('img/teamradebeul.svg')}}"  height="250px;" alt="Team Radebeul">
+    <a href="{{config('config.logo.logo')}}" class="simple-text">
+        <div class="logo-image-small">
+            <img src="{{asset(config('config.logo.logo'))}}" class="bg-light " height="150px;" alt="Logo">
+        </div>
     </a>
 </div>
 <div class="container-fluid  h-75">
