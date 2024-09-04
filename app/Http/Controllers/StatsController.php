@@ -33,6 +33,10 @@ class StatsController extends Controller
         });
 
         $runden_durchschnitt = Cache::remember('runden_durchschnitt', 600, function () use ($repository){
+            if (Sponsoring::count() == 0) {
+                return 0;
+            }
+
             return round(Sponsoring::where('rundenBetrag', '>', 0)->sum('rundenBetrag')/Sponsoring::count(),2);
         });
 
