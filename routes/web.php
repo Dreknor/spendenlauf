@@ -35,9 +35,10 @@ Auth::routes(['verify' => true]);
 Route::get('image/{media_id}', 'ImageController@getImage');
 Route::get('user/{user_id}/sendVerification', 'UserController@sendVerification');
 
-Route::get('/home', 'HomeController@index')->name('home');
 
 Route::middleware(['verified'])->group(function () {
+    Route::get('/home', 'HomeController@index')->name('home');
+
     Route::resource('laeufer', 'LaeuferController');
     Route::resource('teams', 'TeamsController');
     Route::resource('sponsoren', 'SponsorController');
