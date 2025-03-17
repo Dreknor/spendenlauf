@@ -3,11 +3,13 @@
 namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Sponsoring extends Model
 {
-    protected $fillable = ["sponsor_id", "verwaltet_von", "rundenBetrag", 'festBetrag', "maxBetrag"];
-    protected $visible = ["sponsor_id", "verwaltet_von", "rundenBetrag", 'festBetrag', "maxBetrag"];
+    protected $fillable = ['sponsor_id', 'verwaltet_von', 'rundenBetrag', 'festBetrag', 'maxBetrag'];
+
+    protected $visible = ['sponsor_id', 'verwaltet_von', 'rundenBetrag', 'festBetrag', 'maxBetrag'];
 
     protected $attributes = [
         'rundenBetrag' => '0',
@@ -30,7 +32,6 @@ class Sponsoring extends Model
         return $this->morphTo();
     }
 
-
     public function verwalter()
     {
         return $this->belongsTo(User::class, 'verwaltet_von');
@@ -46,34 +47,57 @@ class Sponsoring extends Model
         return $this->belongsToMany(Projects::class);
     }
 
-    public function spende($Runde = NULL)
+    public function spende($Runde = null)
     {
         return $this->getSpendeAttribute($Runde);
     }
 
-    public function getSpendeAttribute($Runde = NULL)
+    public function getSpendeAttribute($Runde = null)
     {
         if (is_null($Runde)) {
-            $Runde = $this->sponsorable->runden;
+            $sponsoring = $this;
+            $Runde = Cache::remember('sponsoring_'.$this->id.'_runde', 60*5, function() use ($sponsoring){
+                return $this->sponsorable->runden;
+            });
         }
-
 
         $Rundenbetrag = $Runde * $this->rundenBetrag;
 
         $Summe = $this->festBetrag + $Rundenbetrag;
 
-        if (!is_null($this->maxBetrag)) {
+        if (! is_null($this->maxBetrag)) {
             if ($Summe > $this->maxBetrag) {
                 $Summe = $this->maxBetrag;
             }
         }
 
-        return $Summe;
+        return (float) $Summe;
     }
 
 
+    public function getSpendeProjektAttribute($Runde = null)
+    {
+        if (is_null($Runde)) {
+            $Runde = $this->sponsorable->runden;
+        }
 
+        $Rundenbetrag = $Runde * $this->rundenBetrag;
 
+        $Summe = $this->festBetrag + $Rundenbetrag;
 
+        if (! is_null($this->maxBetrag)) {
+            if ($Summe > $this->maxBetrag) {
+                $Summe = $this->maxBetrag;
+            }
+        }
+
+        $ergebnis = [];
+
+        foreach ($this->projects as $project){
+            $ergebnis[$project->name] = number_format($Summe / $this->projects->count(),2);
+        }
+
+        return $ergebnis;
+    }
 
 }

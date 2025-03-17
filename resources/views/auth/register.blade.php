@@ -7,6 +7,9 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     {{ __('Anmeldung') }}
+                    <div class="d-inline pull-right">
+                        <a href="{{url('/login')}}" class="btn btn-sm btn-info">zum Login</a>
+                    </div>
                 </div>
 
                 <div class="card-body">

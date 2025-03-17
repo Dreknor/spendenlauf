@@ -5,29 +5,27 @@
 use Faker\Generator as Faker;
 
 $factory->define(\App\Model\Sponsor::class, function (Faker $faker) {
+    $Anrede = $faker->randomElement(['Herr', 'Frau', 'Firma']);
 
-    $Anrede = $faker->randomElement(['Herr', 'Frau', "Firma"]);
-
-    switch ($Anrede){
-        case "Herr":
+    switch ($Anrede) {
+        case 'Herr':
             $vorname = $faker->firstName('male');
             $firmenname = null;
 
             break;
-        case "Frau":
+        case 'Frau':
             $vorname = $faker->firstName('female');
             $firmenname = null;
             break;
-        case "Firma":
+        case 'Firma':
             $vorname = $faker->firstName();
             $firmenname = $faker->company;
             break;
     }
 
-
     $Sponsor = [
-        "anrede" => $Anrede,
-        "vorname"   => $vorname,
+        'anrede' => $Anrede,
+        'vorname'   => $vorname,
         'nachname'  => $faker->lastName,
         'firmenname'    => $firmenname,
         'email' => $faker->unique()->safeEmail,

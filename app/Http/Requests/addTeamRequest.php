@@ -13,9 +13,10 @@ class addTeamRequest extends FormRequest
      */
     public function authorize()
     {
-        if (auth()->user()->can('edit laeufer') or $this->laeufer->verwaltet_von == auth()->user()->id){
+        if (auth()->user()->can('edit laeufer') or $this->laeufer->verwaltet_von == auth()->user()->id) {
             return true;
         }
+
         return false;
     }
 
@@ -27,7 +28,7 @@ class addTeamRequest extends FormRequest
     public function rules()
     {
         return [
-            'team_id'   => "required|integer"
+            'team_id'   => 'required|integer',
         ];
     }
 }

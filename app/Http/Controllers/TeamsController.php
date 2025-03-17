@@ -15,16 +15,16 @@ class TeamsController extends Controller
      */
     public function index()
     {
-        if (auth()->user()->can('edit teams')){
-            $teams = Teams::query()->orderBy('name')->paginate(30);
+        if (auth()->user()->can('edit teams')) {
+            $teams = Teams::query()->orderBy('name')->get();
         } else {
-            $teams = auth()->user()->teams()->paginate(10);
+            $teams = auth()->user()->teams()->get();
         }
 
-        $teams->load(['laeufer', 'sponsorings', 'sponsorings.sponsorable','besitzer']);
+        $teams->load(['laeufer', 'sponsorings', 'sponsorings.sponsorable', 'besitzer']);
 
-        return view('teams.index',[
-            "teams" => $teams
+        return view('teams.index', [
+            'teams' => $teams,
         ]);
     }
 
@@ -33,9 +33,6 @@ class TeamsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-
-
-
     public function create()
     {
         return view('teams.create');
@@ -50,16 +47,15 @@ class TeamsController extends Controller
     public function store(CreateTeamRequest $request)
     {
         $team = new Teams();
-        $team->fill($request->all());
+        $team->fill($request->validated());
         $team->verwaltet_von = auth()->user()->id;
 
         $team->save();
 
         return redirect(url('teams'))->with([
-           "type"   => "success",
-           "Meldung"    =>__('Team wurde erstellt.')
+            'type'   => 'success',
+            'Meldung'    =>__('Team wurde erstellt.'),
         ]);
-
     }
 
     /**
@@ -71,7 +67,6 @@ class TeamsController extends Controller
     public function show(Teams $team)
     {
         return $this->edit($team);
-
     }
 
     /**
@@ -82,18 +77,17 @@ class TeamsController extends Controller
      */
     public function edit(Teams $team)
     {
-        if (auth()->user()->can('edit teams') or $team->verwaltet_von == auth()->user()->id){
-
+        if (auth()->user()->can('edit teams') or $team->verwaltet_von == auth()->user()->id) {
             $team->load(['sponsorings', 'sponsorings.sponsor', 'sponsorings.sponsorable', 'sponsorings.projects', 'sponsorings.sponsorable']);
 
-            return view('teams.edit',[
-                "team"  => $team
+            return view('teams.edit', [
+                'team'  => $team,
             ]);
         }
 
         return redirect()->back()->with([
-            "type"  => "danger",
-            "Meldung"   => __('Berechtigung fehlt')
+            'type'  => 'danger',
+            'Meldung'   => __('Berechtigung fehlt'),
         ]);
     }
 
@@ -106,23 +100,22 @@ class TeamsController extends Controller
      */
     public function update(Request $request, Teams $team)
     {
-        if (!auth()->user()->can('edit teams')  and $team->verwaltet_von != auth()->user()->id){
+        if (! auth()->user()->can('edit teams') and $team->verwaltet_von != auth()->user()->id) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
         $team->update([
-            "name"  => $request->name,
-            "open"   => $request->open
+            'name'  => $request->name,
+            'open'   => $request->open,
         ]);
 
-
         return redirect(url('teams'))->with([
-            "type"  => "success",
-            "Meldung"  => __('Änderungen gespeichert')
-            ]);
+            'type'  => 'success',
+            'Meldung'  => __('Änderungen gespeichert'),
+        ]);
     }
 
     /**

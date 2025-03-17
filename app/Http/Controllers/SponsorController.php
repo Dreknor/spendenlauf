@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSponsorRequest;
 use App\Mail\SponsorAnschreiben;
 use App\Model\Laeufer;
+use App\Model\Projects;
 use App\Model\Sponsor;
 use App\Model\Teams;
 use App\Repositories\SpendenlaufRepository;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Mail;
@@ -22,16 +24,16 @@ class SponsorController extends Controller
      */
     public function index()
     {
-
-        if (auth()->user()->can('edit sponsoren')){
+        if (auth()->user()->can('edit sponsoren')) {
             $sponsoren = Sponsor::query()->orderBy('nachname')->get();
         } else {
             $sponsoren = auth()->user()->sponsoren()->orderBy('nachname')->paginate(20);
         }
 
         $sponsoren->load(['sponsorings', 'verwalter']);
-        return view('sponsoren.index',[
-            'sponsoren'   => $sponsoren
+
+        return view('sponsoren.index', [
+            'sponsoren'   => $sponsoren,
         ]);
     }
 
@@ -53,22 +55,21 @@ class SponsorController extends Controller
      */
     public function store(CreateSponsorRequest $request)
     {
-
-            $sponsor = Sponsor::firstOrNew([
-                "vorname"  => $request->vorname,
-                "nachname"  => $request->nachname,
-                "ort"  => $request->ort,
-                "plz"  => $request->plz,
-                "strasse"  => $request->strasse,
-            ], $request->all());
+        $sponsor = Sponsor::firstOrNew([
+            'vorname'  => $request->vorname,
+            'nachname'  => $request->nachname,
+            'ort'  => $request->ort,
+            'plz'  => $request->plz,
+            'strasse'  => $request->strasse,
+        ], $request->all());
 
         $sponsor->save();
 
         $sponsor->users()->syncWithoutDetaching(auth()->user());
 
         return redirect(url('sponsoren'))->with([
-           'type'   => "success",
-           "Meldung"  => __('Spender angelegt')
+            'type'   => 'success',
+            'Meldung'  => __('Spender angelegt'),
         ]);
     }
 
@@ -89,22 +90,21 @@ class SponsorController extends Controller
      * @param  \App\Model\Sponsor  $sponsor
      * @return \Illuminate\Http\Response
      */
-    public function edit( $sponsor)
+    public function edit($sponsor)
     {
         $sponsor = Sponsor::find($sponsor);
 
-        if (!auth()->user()->can('edit sponsoren') and !auth()->user()->sponsoren->contains($sponsor)){
+        if (! auth()->user()->can('edit sponsoren') and ! auth()->user()->sponsoren->contains($sponsor)) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
         $sponsor->load(['sponsorings', 'sponsorings.projects', 'sponsorings.projects.media', 'sponsorings.sponsorable', 'sponsorings.sponsor']);
 
-
-        return view('sponsoren.edit',[
-           "sponsor"    =>$sponsor
+        return view('sponsoren.edit', [
+            'sponsor'    =>$sponsor,
         ]);
     }
 
@@ -117,18 +117,17 @@ class SponsorController extends Controller
      */
     public function update(Request $request, $sponsor)
     {
-
         $sponsor = Sponsor::find($sponsor);
-        if ($sponsor->update($request->all())){
+        if ($sponsor->update($request->all())) {
             return redirect()->back()->with([
-                'type'   => "success",
-                "Meldung"  => __('Spender bearbeitet')
+                'type'   => 'success',
+                'Meldung'  => __('Spender bearbeitet'),
             ]);
         }
 
         return redirect()->back()->with([
-            'type'   => "danger",
-            "Meldung"  => __('Speichern fehlgeschlagen')
+            'type'   => 'danger',
+            'Meldung'  => __('Speichern fehlgeschlagen'),
         ]);
     }
 
@@ -143,46 +142,46 @@ class SponsorController extends Controller
         //
     }
 
-    public function sendMail($Sponsor){
-        if (!auth()->user()->can('send mail')){
+    public function sendMail($Sponsor)
+    {
+        if (! auth()->user()->can('send mail')) {
             return redirect()->back()->with([
-                'type'   => "danger",
-                "Meldung"  => __('Berechtigung fehlt')
+                'type'   => 'danger',
+                'Meldung'  => __('Berechtigung fehlt'),
             ]);
         }
 
-        if (Carbon::now()->lessThan(Carbon::createFromFormat('d.m.Y', '15.06.2019'))){
-            return redirect()->back()->with([
-                'type'   => "danger",
-                "Meldung"  => __('Erst ab 15.06.2020 möglich')
-            ]);
-        }
-
-        if ($Sponsor == 'all'){
-            $sponsors = Sponsor::all();
+        if ($Sponsor == 'all') {
+            $sponsors = Sponsor::where('mail_send', null)->get();
         } else {
             $sponsors = Sponsor::where('id', $Sponsor)->get();
         }
 
-        $sponsors->load(['sponsorings','sponsorings.sponsorable','sponsorings.projects']);
-
+        $sponsors->load(['sponsorings', 'sponsorings.sponsorable', 'sponsorings.projects']);
 
         $repository = new SpendenlaufRepository();
-        $zaehler=0;
+        $zaehler = 0;
 
+        $projekte = Projects::all();
 
-        foreach ($sponsors as $sponsor){
-            if (!is_null($sponsor->email) and $sponsor->sponsorings->count()>0){
+        foreach ($sponsors as $sponsor) {
+            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
                 $zaehler++;
-                Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor,  $repository->anzahlLauefer(), $repository->spendensumme()));
+
+
+                $sponsoring_projects = $sponsor->sponsorings()->whereHas('projects', function (Builder $query){
+                    return $query->where('projects.id', '!=', 4);
+                })->count();
+
+
+                    Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
+                $sponsor->update(['mail_send' => Carbon::now()]);
             }
-
-
         }
-        return redirect()->back()->with([
-            'type'=>"success",
-            "Meldung" => __("Es wurden $zaehler Mails versandt")
-        ]);
 
+        return redirect()->back()->with([
+            'type'=>'success',
+            'Meldung' => __("Es wurden $zaehler Mails versandt"),
+        ]);
     }
 }

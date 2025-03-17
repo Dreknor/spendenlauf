@@ -24,7 +24,8 @@ class CreateTeamRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'  => 'required|unique:teams'
+            'name'  => 'required|unique:teams',
+            'open'  => 'sometimes'
         ];
     }
 }

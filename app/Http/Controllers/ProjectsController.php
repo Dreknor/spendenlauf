@@ -8,10 +8,8 @@ use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
-
     public function __construct()
     {
-
     }
 
     /**
@@ -21,8 +19,8 @@ class ProjectsController extends Controller
      */
     public function index()
     {
-        return view('projects.index',[
-            "projects"  => Projects::all()->load('sponsorings')
+        return view('projects.index', [
+            'projects'  => Projects::all()->load('sponsorings'),
         ]);
     }
 
@@ -33,10 +31,10 @@ class ProjectsController extends Controller
      */
     public function create()
     {
-        if (!auth()->user()->can('edit projekt')){
+        if (! auth()->user()->can('edit projekt')) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
@@ -51,22 +49,22 @@ class ProjectsController extends Controller
      */
     public function store(CreateProjectRequest $request)
     {
-        if (!auth()->user()->can('edit projekt')){
+        if (! auth()->user()->can('edit projekt')) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
         $project = new Projects($request->all());
         $project->save();
-        if ($request->hasFile('files')){
+        if ($request->hasFile('files')) {
             $project->addMediaFromRequest('files')->toMediaCollection('images');
         }
 
         return redirect(url('projects'))->with([
-           "type"   => "success",
-           'Meldung'    => __('Projekt erstellt')
+            'type'   => 'success',
+            'Meldung'    => __('Projekt erstellt'),
         ]);
     }
 
@@ -89,14 +87,15 @@ class ProjectsController extends Controller
      */
     public function edit(Projects $project)
     {
-        if (!auth()->user()->can('edit projekt')){
+        if (! auth()->user()->can('edit projekt')) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
+
         return view('projects.edit', [
-            "project"   => $project
+            'project'   => $project,
         ]);
     }
 
@@ -109,26 +108,26 @@ class ProjectsController extends Controller
      */
     public function update(Request $request, Projects $project)
     {
-        if (!auth()->user()->can('edit projekt')){
+        if (! auth()->user()->can('edit projekt')) {
             return redirect()->back()->with([
-                "type"  => "danger",
-                "Meldung"   => __('Berechtigung fehlt')
+                'type'  => 'danger',
+                'Meldung'   => __('Berechtigung fehlt'),
             ]);
         }
 
         $project->update([
-            "name"  => $request->name,
-            "description"   => $request->description
+            'name'  => $request->name,
+            'description'   => $request->description,
         ]);
 
-        if ($request->hasFile('files')){
+        if ($request->hasFile('files')) {
             $project->clearMediaCollection('images');
             $project->addMediaFromRequest('files')->toMediaCollection('images');
         }
 
         return redirect(url('projects'))->with([
-            "type"  => "success",
-            "Meldung"   => __('Projekt bearbeitet')
+            'type'  => 'success',
+            'Meldung'   => __('Projekt bearbeitet'),
         ]);
     }
 

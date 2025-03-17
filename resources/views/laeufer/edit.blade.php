@@ -17,7 +17,8 @@
                                     {{__('Läuferdaten')}}
                                 </b>
                             </div>
-                            <div class="card-body">
+                            @if(\Carbon\Carbon::today() < config('config.spendenlauf.date'))
+                                <div class="card-body">
                                 <form action="{{url('laeufer/'.$Laeufer->id)}}" method="post" class="form-horizontal">
                                     @csrf
                                     @method('put')
@@ -65,7 +66,7 @@
                                         <label for="geburtsdatum" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Geburtsdatum') }}</label>
 
                                         <div class="col-md-8 col-sm-7">
-                                            <input id="geburtsdatum" type="date" class="form-control @error('geburtsdatum') is-invalid @enderror" name="geburtsdatum" value="{{$Laeufer->geburtsdatum->format('Y-m-d')}}" required autocomplete="geburtsdatum" autofocus>
+                                            <input id="geburtsdatum" type="date" class="form-control @error('geburtsdatum') is-invalid @enderror" name="geburtsdatum" value="{{optional($Laeufer->geburtsdatum)->format('Y-m-d')}}" autocomplete="geburtsdatum" autofocus>
                                             @error('geburtsdatum')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
@@ -95,7 +96,7 @@
                                         </div>
 
                                         <div class="col-md-10 col-sm-10">
-                                            <label for="geschlecht" class="">{{ __('Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) mit den Teilnahmebedingungen einverstanden ist.') }}</label>
+                                            <label for="geschlecht" class="">{{ __('Ich bestätige, dass der Läufer / die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) mit den Teilnahmebedingungen einverstanden ist.') }}</label>
                                         </div>
                                     </div>
                                     <div class="form-group row">
@@ -104,7 +105,7 @@
                                         </div>
 
                                         <div class="col-md-10 col-sm-10">
-                                            <label for="bilder" class="">{{ __('Ich bestätige, dass der Läufer (bzw. der Sorgeberechtigte des Läufers) das Fotografieren und die Verwendung der Fotos gemäß Fotofreigabe genehmigt.') }}</label>
+                                            <label for="bilder" class="">{{ __('Ich bestätige, dass der Läufer/die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß Fotofreigabe genehmigt.') }}</label>
                                         </div>
                                     </div>
 
@@ -116,13 +117,42 @@
                                 </form>
 
                             </div>
+
+                            @else
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Name:
+                                            </b>
+                                            {{$Laeufer->vorname}} {{$Laeufer->nachname}}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Geschlecht:
+                                            </b>
+                                            @if($Laeufer->geschlecht == 1) männlich @else weiblich @endif
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <b>
+                                                Geburtsdatum:
+                                            </b>
+                                            {{optional($Laeufer->geburtsdatum)->format('d.m.Y')}}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                     <div class="col-md-6 col-sm-12">
                         <div class="card">
                             <div class="card-header">
                                 <b>
-                                    {{__('Spendenlauf 2019')}}
+                                    {{__('Spendenlauf')}} {{config('config.spendenlauf.date')->format('Y')}}
                                 </b>
                             </div>
                             <div class="card-body">
@@ -134,6 +164,15 @@
                                        {{__('Runden:')}} @if(is_null($Laeufer->runden)) 0 @else {{$Laeufer->runden}} @endif
                                     </div>
                                 </div>
+                                @if(!is_null($Laeufer->runden) and \Carbon\Carbon::today() >= config('config.spendenlauf.date'))
+                                    <div class="row">
+                                        <div class="col">
+                                            <a href="{{url('laeufer/'.$Laeufer->id.'/bestaetigung')}}" class="btn btn-outline-info">
+                                                <i class="fa fa-file-pdf pl-2"></i> Bestätigung Teilnahme
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <div class="card">
@@ -166,6 +205,12 @@
                                     <p>
                                         {{__('Der Läufer ist in keinem Team')}}
                                     </p>
+                                        <a href="{{url('laeufer/'.$Laeufer->id.'/addTeam')}}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-user-friends d-block d-md-none"></i>
+                                            <div class="d-none d-md-block">
+                                                {{__('Team hinzufügen')}}
+                                            </div>
+                                        </a>
                                 @endif
                             </div>
                         </div>
