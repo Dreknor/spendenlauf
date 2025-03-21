@@ -5,7 +5,7 @@
     <div class="container-fluid">
         <div class="card">
             <div class="card-header border-bottom">
-                Import der Rundenzahlen
+                Import der Rundenzahlen aus einer CSV-Datei
             </div>
             <div class="card-body">
                 <form action="{{url('/import/runden')}}" method="post" class="form form-horizontal" enctype="multipart/form-data">
@@ -30,6 +30,20 @@
                     </div>
                 </form>
 
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header border-bottom">
+                Import der Rundenzahlen von einer URL
+            </div>
+            <div class="card-body">
+                <p>
+                    URL: <a href="{{config('config.import.url')}}" target="_blank">{{config('config.import.url')}}</a>
+                </p>
+                <p>
+                    <a href="{{url('import/runden/url/test')}}" class="btn btn-primary">Importieren</a>
+                </p>
             </div>
         </div>
     </div>

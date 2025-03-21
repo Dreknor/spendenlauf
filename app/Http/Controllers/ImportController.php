@@ -6,6 +6,7 @@ use App\Imports\RundenUpdate;
 use App\Imports\RundenUpdateImport;
 use App\Model\Laeufer;
 use Carbon\Carbon;
+use DOMDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +44,8 @@ class ImportController extends Controller
     public function importFromUrl($test = false)
     {
 
+        Log::info('Import von URL');
+
         if (!config('config.spendenlauf.date')->isToday() && !$test) {
             Log::info('Kein Spendenlauf heute');
             return null;
@@ -50,7 +53,7 @@ class ImportController extends Controller
 
 
         $runden_alt = Laeufer::query()->sum('runden');
-
+        Log::info('Runden alt: '.$runden_alt);
 
 
         $url = config('config.import.url');
@@ -60,24 +63,56 @@ class ImportController extends Controller
             return null;
         }
 
-
         try {
             $data = file_get_contents($url);
+            Log::info('Import von URL');
+            Log::info($url);
+
+            $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
+            preg_match($pattern, $data, $matches);
+
+
+            if (empty($matches)) {
+                Log::error('Keine CSV-Datei gefunden');
+                return null;
+            }
+
+
+            $url = 'https://www.berlin-timing.de/'.$matches[0];
+
+            Log::info($url);
+
+            Log::info('Import von URL - Hole CSV-Datei');
+            $data = file_get_contents($url);
+
+            if ($data === false) {
+                Log::error('Fehler beim Lesen der Datei');
+                return null;
+            }
 
             $file = 'temp.csv';
             file_put_contents($file, $data);
-            Excel::import(new RundenUpdate(), $file);
-            unlink($file);
+
+            Log::info("Datei heruntergeladen");
+
+            try {
+                Excel::import(new RundenUpdate(), $file);
+                unlink($file);
+                $runden_neu = Laeufer::query()->sum('runden');
+            } catch (\Exception $e) {
+                dd($e);
+            }
+
+
+            Cache::forget('sponsorings');
+            $string = 'Runden wurden aktualisiert. Anzahl der Runden vorher: '.$runden_alt.' Anzahl der Runden nachher: '.$runden_neu;
+
         } catch (\Exception $e) {
-            Log::error('Fehler beim Importieren der Runden:');
-            Log::error($e->getMessage());
+            Log::error('Fehler beim Lesen der URL');
+            Log::error($e);
+            return null;
         }
 
-
-        $runden_neu = Laeufer::query()->sum('runden');
-
-        Cache::clear();
-        $string = 'Runden wurden aktualisiert. Anzahl der Runden vorher: '.$runden_alt.' Anzahl der Runden nachher: '.$runden_neu;
 
         if ($test) {
             return $string;
