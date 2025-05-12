@@ -58,10 +58,12 @@ class SponsorController extends Controller
         $sponsor = Sponsor::firstOrNew([
             'vorname'  => $request->vorname,
             'nachname'  => $request->nachname,
+            'firmenname' => $request->firmenname,
             'ort'  => $request->ort,
             'plz'  => $request->plz,
             'strasse'  => $request->strasse,
-        ], $request->all());
+
+        ], $request->validated());
 
         $sponsor->save();
 
