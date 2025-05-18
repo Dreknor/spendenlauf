@@ -45,6 +45,7 @@ class ImportController extends Controller
     {
 
         Log::info('Import von URL');
+        $string = 'Strat Import von URL';
 
         if (!config('config.spendenlauf.date')->isToday() && !$test) {
             Log::info('Kein Spendenlauf heute');
@@ -68,7 +69,7 @@ class ImportController extends Controller
             Log::info('Import von URL');
             Log::info($url);
 
-            $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
+            $pattern = 'https://www.berlin-timing.de/Liste\/[a-zA-Z0-9]+\.csv/';
             preg_match($pattern, $data, $matches);
 
 
@@ -110,6 +111,7 @@ class ImportController extends Controller
         } catch (\Exception $e) {
             Log::error('Fehler beim Lesen der URL');
             Log::error($e);
+
             return null;
         }
 
