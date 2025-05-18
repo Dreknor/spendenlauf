@@ -17,6 +17,9 @@ class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
     {
 
         Log::info('Import von RundenUpdate');
+        Log::info('Import von RundenUpdate', [
+            'row' => $row,
+        ]);
 
 
         $laeufer = Laeufer::where('startnummer', $row[0])->first();
@@ -46,7 +49,7 @@ class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
 
     public function headingRow(): int
     {
-        return 5;
+        return 4;
     }
 
     public function batchSize(): int
