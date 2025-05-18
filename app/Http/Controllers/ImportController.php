@@ -10,6 +10,7 @@ use DOMDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ImportController extends Controller
@@ -95,7 +96,9 @@ class ImportController extends Controller
             }
 
             $file = 'temp.csv';
-            file_put_contents($file, $data);
+            $csvContent = str_replace(';', ',', $csvContent);
+
+            file_put_contents($file, $csvContent);
 
             Log::info("Datei heruntergeladen");
 
