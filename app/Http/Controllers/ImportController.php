@@ -68,6 +68,7 @@ class ImportController extends Controller
             $data = file_get_contents($url);
             Log::info('Import von URL');
             Log::info($url);
+            Log::info($data);
 
             $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
             preg_match($pattern, $data, $matches);
