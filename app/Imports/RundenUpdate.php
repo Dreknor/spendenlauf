@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class RundenUpdate implements  ToModel, WithBatchInserts
+class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
 {
 
     public function model(array $row)
@@ -18,19 +18,25 @@ class RundenUpdate implements  ToModel, WithBatchInserts
 
         Log::info('Import von RundenUpdate');
 
-        Log::info(collect($row));
 
         $laeufer = Laeufer::where('startnummer', $row['0'])->first();
 
 
         if ($laeufer != null) {
-            $laeufer->runden = $row['anzahl_runden'];
+            $laeufer->runden = $row['5'];
 
-            Log::info('Runden: '.$row['anzahl_runden']);
+            Log::info('Runden: '.$row['5']);
 
             $laeufer->save();
         } else {
-            Log::info('Laeufer nicht gefunden'. $row['0']);
+            Log::info('Laeufer nicht gefunden',
+            [
+                    'startnummer' => $row['0'],
+                    'name'        => $row['1'],
+                    'vorname'     => $row['2'],
+                    'team'        => $row['3'],
+                    'runden'      => $row['5'],
+                ]);
         }
 
         return null;
@@ -39,7 +45,7 @@ class RundenUpdate implements  ToModel, WithBatchInserts
 
     public function headingRow(): int
     {
-        return 4;
+        return 5;
     }
 
     public function batchSize(): int
