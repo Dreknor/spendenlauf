@@ -8,9 +8,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithCustomCsvSettings;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
+class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts, WithCustomCsvSettings
+
 {
 
     public function model(array $row)
