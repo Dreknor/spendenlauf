@@ -83,7 +83,7 @@ class ImportController extends Controller
 
             $url = 'https://www.berlin-timing.de/'.$matches[0];
 
-            Log::info($url);
+            Log::info('CSV-URL: '.$url);
 
             Log::info('Import von URL - Hole CSV-Datei');
             $data = file_get_contents($url);
@@ -93,12 +93,11 @@ class ImportController extends Controller
                 return null;
             }
 
+
             $file = 'temp.csv';
-            $csvContent = str_replace(';', ',', $csvContent);
 
-            Log::info($csvContent);
 
-            file_put_contents($file, $csvContent);
+            file_put_contents($file, $data);
 
             Log::info("Datei heruntergeladen");
 

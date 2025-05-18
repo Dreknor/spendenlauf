@@ -47,5 +47,11 @@ class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
         return 20;
     }
 
+    public function getCsvSettings(): array
+    {
+        return [
+            'delimiter' => ";"
+        ];
+    }
 
 }
