@@ -19,23 +19,24 @@ class RundenUpdate implements  ToModel, WithHeadingRow, WithBatchInserts
         Log::info('Import von RundenUpdate');
 
 
-        $laeufer = Laeufer::where('startnummer', $row['0'])->first();
+        $laeufer = Laeufer::where('startnummer', $row[0])->first();
 
 
         if ($laeufer != null) {
-            $laeufer->runden = $row['5'];
+            $laeufer->runden = $row[5];
 
-            Log::info('Runden: '.$row['5']);
+            Log::info('Runden: '.$row[5]);
 
             $laeufer->save();
         } else {
             Log::info('Laeufer nicht gefunden',
             [
-                    'startnummer' => $row['0'],
-                    'name'        => $row['1'],
-                    'vorname'     => $row['2'],
-                    'team'        => $row['3'],
-                    'runden'      => $row['5'],
+                'startnummer' => $row[0],
+                'vorname' => $row[1],
+                'nachname' => $row[2],
+                'team' => $row[3],
+                'runden' => $row[5],
+
                 ]);
         }
 
