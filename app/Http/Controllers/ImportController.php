@@ -67,9 +67,7 @@ class ImportController extends Controller
 
         try {
             $data = file_get_contents($url);
-            Log::info('Import von URL');
-            Log::info($url);
-            Log::info($data);
+            Log::info('Import von URL', ['url' => $url]);
 
             $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
             preg_match($pattern, $data, $matches);
@@ -98,11 +96,14 @@ class ImportController extends Controller
             $file = 'temp.csv';
             $csvContent = str_replace(';', ',', $csvContent);
 
+            Log::info($csvContent);
+
             file_put_contents($file, $csvContent);
 
             Log::info("Datei heruntergeladen");
 
             try {
+                Log::info('Starte Import');
                 Excel::import(new RundenUpdate(), $file);
                 unlink($file);
                 $runden_neu = Laeufer::query()->sum('runden');
@@ -120,6 +121,8 @@ class ImportController extends Controller
 
             return null;
         }
+
+        Log::info('Runden wurden aktualisiert');
 
 
         if ($test) {
