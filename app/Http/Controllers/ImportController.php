@@ -72,6 +72,7 @@ class ImportController extends Controller
             $pattern = 'https://www.berlin-timing.de/Liste\/[a-zA-Z0-9]+\.csv/';
             preg_match($pattern, $data, $matches);
 
+            Log::info('CSV-Datei gefunden: '.json_encode($matches));
 
             if (empty($matches)) {
                 Log::error('Keine CSV-Datei gefunden');
