@@ -128,7 +128,7 @@ class TeamsController extends Controller
     public function destroy(Teams $teams)
     {
         if ($teams->verwaltet_von == auth()->user()->id or auth()->user()->can('edit teams')) {
-
+        dd($teams);
             if ($teams->laeufer()->count() > 0) {
                 return redirect()->back()->with([
                     'type'  => 'danger',
