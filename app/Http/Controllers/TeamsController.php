@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateTeamRequest;
 use App\Model\Teams;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TeamsController extends Controller
 {
@@ -126,6 +127,39 @@ class TeamsController extends Controller
      */
     public function destroy(Teams $teams)
     {
-        //
+        if ($teams->verwaltet_von == auth()->user()->id or auth()->user()->can('edit teams')) {
+
+            if ($teams->laeufer()->count() > 0) {
+                return redirect()->back()->with([
+                    'type'  => 'danger',
+                    'Meldung'   => __('Team kann nicht gelöscht werden, da es noch Läufer enthält'),
+                ]);
+            }
+
+            if ($teams->sponsorings()->count() > 0) {
+                return redirect()->back()->with([
+                    'type'  => 'danger',
+                    'Meldung'   => __('Team kann nicht gelöscht werden, da es noch Sponsoring enthält'),
+                ]);
+            }
+
+            Log::info('Team gelöscht', [
+                'Team gelöscht' => $teams->name,
+                'ID'            => $teams->id,
+                'User'          => auth()->user()->name,
+            ]);
+
+            $teams->delete();
+
+            return redirect(url('teams'))->with([
+                'type'  => 'success',
+                'Meldung'   => __('Team gelöscht'),
+            ]);
+        }
+
+        return redirect()->back()->with([
+            'type'  => 'danger',
+            'Meldung'   => __('Berechtigung fehlt'),
+        ]);
     }
 }
