@@ -125,10 +125,21 @@ class TeamsController extends Controller
      * @param  \App\Model\Teams  $teams
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Teams $teams)
+    public function destroy($teams)
     {
+
+        try {
+            $teams = Teams::findOrFail($teams);
+        } catch (\Exception $e) {
+            return redirect()->back()->with([
+                'type'  => 'danger',
+                'Meldung'   => __('Team nicht gefunden'),
+            ]);
+        }
+
+
+
         if ($teams->verwaltet_von == auth()->user()->id or auth()->user()->can('edit teams')) {
-        dd($teams);
             if ($teams->laeufer()->count() > 0) {
                 return redirect()->back()->with([
                     'type'  => 'danger',
