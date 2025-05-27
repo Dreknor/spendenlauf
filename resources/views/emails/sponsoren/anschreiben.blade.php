@@ -7,18 +7,18 @@
 {{$sponsor->plz}} {{$sponsor->ort}}
 <br>
 <br>
-#Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}}
+#7. Radebeuler Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}}
 <br>
 <br>
 
 {{$sponsor->anrede_brief}}
 
-vielen Dank, dass Sie durch Ihre Sach- oder Geldspende unsere Projekte in Radebeul unterstützt haben.
+vielen Dank, dass Sie durch Ihre Sach- oder Geldspende unsere Projekte unterstützt haben.
 
 Der Spendenlauf am {{config('config.spendenlauf.date')->format('d.m.Y')}} war ein großer Erfolg. {{$countLaeufer}} Läufer haben {{number_format($spendensumme,2)}} € erlaufen. Wir sind überwältigt, dass sich so viele Menschen an
 dieser Aktion beteiligt haben. An dieser Stelle bedanken wir uns ganz herzlich für Ihre Unterstützung.
 <br>
-Bitte beachten Sie, dass 10% der Spendensumme für das Radebeuler Kinder- und Frauenschutzhaus verwendet werden.
+Bitte beachten Sie, dass 10% der Spendensumme für den Sozialdienst Katholischer Frauen in Radebeul verwendet werden.
 
 @component('mail::table')
     @php($Spendensumme=0)
@@ -32,28 +32,18 @@ Bitte beachten Sie, dass 10% der Spendensumme für das Radebeuler Kinder- und Fr
 @endcomponent
 
 
-@if($sponsoring_projects == 0)
-Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Kirchspiel in der Lößnitz.
-<br><br>
-Kirchspiel in der Lößnitz<br>
-DE06 3506 0190 1667 2090 28,<br>
-KD Bank für Kirche und Diakonie, Kassenverwaltung Dresden<br>
-Verwendungszweck (wichtig): 1082 Spendenlauf Lößnitz<br>
-@else
-Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto des Schulvereins und wir leiten die Gelder dann an die Projekte weiter.
+Bitte überweisen Sie Ihren Spendenbetrag in Höhe von {{number_format($Spendensumme,2)}} € (falls noch nicht geschehen) auf das Konto unseres Fördervereins.
 <br>
-Evangelischer Schulverein Radebeul e.V.<br>
-Sparkasse Meißen<br>
-IBAN: DE77 8505 5000 3000 0401 10<br>
+Freunde und Förderer des ESZ Radebeul e.V.<br>
+Sparkasse Meißen IBAN: DE40 8505 5000 0500 0279 60<br>
 BIC: SOLADES1MEI<br>
-Verwendungszweck: Spendenlauf2023
-@endif
+Verwendungszweck: Spendenlauf 2025<br>
 
 
-@if($Spendensumme > 200)
+@if($Spendensumme > 300)
 Sollten Sie eine Spendenbescheinigung benötigen, so teilen Sie uns dies bitte mit.
 @else
-Bei Spenden bis 200€ akzeptieren die Finanzämter den Überweisungsbeleg als Spendennachweis für die Steuererklärung.
+Bei Spenden bis 300€ akzeptieren die Finanzämter den Überweisungsbeleg als Spendennachweis für die Steuererklärung.
 @endif
 
 Fotos vom Spendenlauf und aktuelle Informationen finden Sie in den
