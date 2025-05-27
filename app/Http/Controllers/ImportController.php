@@ -10,6 +10,7 @@ use DOMDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ImportController extends Controller
@@ -45,6 +46,7 @@ class ImportController extends Controller
     {
 
         Log::info('Import von URL');
+        $string = 'Strat Import von URL';
 
         if (!config('config.spendenlauf.date')->isToday() && !$test) {
             Log::info('Kein Spendenlauf heute');
@@ -65,11 +67,12 @@ class ImportController extends Controller
 
         try {
             $data = file_get_contents($url);
-            Log::info('Import von URL');
-            Log::info($url);
+            Log::info('Import von URL', ['url' => $url]);
 
             $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
             preg_match($pattern, $data, $matches);
+
+            Log::info('CSV-Datei gefunden: '.json_encode($matches));
 
 
             if (empty($matches)) {
@@ -80,7 +83,7 @@ class ImportController extends Controller
 
             $url = 'https://www.berlin-timing.de/'.$matches[0];
 
-            Log::info($url);
+            Log::info('CSV-URL: '.$url);
 
             Log::info('Import von URL - Hole CSV-Datei');
             $data = file_get_contents($url);
@@ -90,12 +93,16 @@ class ImportController extends Controller
                 return null;
             }
 
+
             $file = 'temp.csv';
+
+
             file_put_contents($file, $data);
 
             Log::info("Datei heruntergeladen");
 
             try {
+                Log::info('Starte Import');
                 Excel::import(new RundenUpdate(), $file);
                 unlink($file);
                 $runden_neu = Laeufer::query()->sum('runden');
@@ -110,8 +117,11 @@ class ImportController extends Controller
         } catch (\Exception $e) {
             Log::error('Fehler beim Lesen der URL');
             Log::error($e);
+
             return null;
         }
+
+        Log::info('Runden wurden aktualisiert');
 
 
         if ($test) {

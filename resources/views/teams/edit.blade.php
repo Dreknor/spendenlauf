@@ -111,9 +111,28 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-9">
+                    <a href="{{url("/teams")}}" class="btn btn-secondary btn-block">
+                        {{__('Zurück')}}
+                    </a>
+                </div>
+                <div class="col-3">
+                    @if($team->laeufer->count() == 0 and $team->sponsorings->count() == 0)
+                        <form action="{{url("/teams/$team->id")}}" method="post" class="form form-horizontal">
+                            @csrf
+                            @method('delete')
+                            <button type="submit" class="btn btn-danger">
+                                {{__('Team löschen')}}
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+
     </div>
 
 @endsection
