@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SponsorAnschreiben extends Mailable
 {
@@ -40,6 +41,13 @@ class SponsorAnschreiben extends Mailable
      */
     public function build()
     {
+
+        Log::debug('Build Mail', [
+            'sponsor'   => $this->sponsor,
+            'sponsoring_projects' => $this->sponsoring_projects,
+            'summe' => $this->spendensumme
+        ]);
+
         return $this->markdown('emails.sponsoren.anschreiben', [
             'sponsor'   => $this->sponsor,
             'sponsoring_projects' => $this->sponsoring_projects

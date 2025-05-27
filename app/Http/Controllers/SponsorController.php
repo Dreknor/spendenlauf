@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SponsorController extends Controller
@@ -146,6 +147,9 @@ class SponsorController extends Controller
 
     public function sendMail($Sponsor)
     {
+
+        Log::debug('SponsorController@sendMail');
+
         if (! auth()->user()->can('send mail')) {
             return redirect()->back()->with([
                 'type'   => 'danger',
@@ -157,6 +161,9 @@ class SponsorController extends Controller
             $sponsors = Sponsor::where('mail_send', null)->get();
         } else {
             $sponsors = Sponsor::where('id', $Sponsor)->get();
+            Log::debug('Sponsor: ', [
+                'Sponsor' => $sponsors,
+            ]);
         }
 
         $sponsors->load(['sponsorings', 'sponsorings.sponsorable', 'sponsorings.projects']);
@@ -169,6 +176,11 @@ class SponsorController extends Controller
         foreach ($sponsors as $sponsor) {
             if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
                 $zaehler++;
+
+                Log::debug('Sponsoring: ', [
+                    'Sponsoring' => $sponsor->sponsorings,
+                ]);
+
 
 
                 $sponsoring_projects = $sponsor->sponsorings()->whereHas('projects', function (Builder $query){
