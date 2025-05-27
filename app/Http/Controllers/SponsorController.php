@@ -188,7 +188,7 @@ class SponsorController extends Controller
                 })->count();
 
 
-                    Mail::to($sponsor->email)->queue(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
+                    Mail::to($sponsor->email)->send(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
                 $sponsor->update(['mail_send' => Carbon::now()]);
             }
         }
