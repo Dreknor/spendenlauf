@@ -70,48 +70,29 @@
     </style>
 </head>
 <body>
-    <img src="{{storage_path('app/urkunde_blank-scaled.png')}}" id="bg" style="margin-left: -30px;">
+    <img src="{{storage_path('app/urkunde_blank-scaled.png')}}" id="bg" style="margin-left: -40px;">
 
 
 <div style="z-index: 100">
-    <p id="anschrift">
-        {{$laeufer->vorname}} {{$laeufer->nachname}}
-    </p>
-    <br>
-    <p class="rechts">
-        Radebeul, {{ date('d.m.Y') }}
-    </p>
-    <br><br><br>
-    <p class="fett">
-        Bestätigung der Teilnahme beim Spendenlauf des Evangelischen Schulverein Radebeul e.V. am {{config('config.spendenlauf.date')->format('d.m.Y')}}
-    </p>
-    <br><br>
-    <p class="">
-        Wir bestätigen, dass <b>{{$laeufer->vorname}} {{$laeufer->nachname}} (geb. {{optional($laeufer->geburtstag)->format('d.m.Y')}})</b> am Radebeuler Spendenlauf  am  {{config('config.spendenlauf.date')->format('d.m.Y')}}  im Lößnitzstadion teilgenommen hat.
-    </p>
-    <p class="">
-        In der Laufzeit von 2 Stunden absolvierte {{$laeufer->vorname}} {{$laeufer->nachname}} {{$laeufer->runden}} Runden zu je 400m was einer Laufstrecke von {{ ($laeufer->runden * 400)/1000  }} km entspricht.
-    </p>
+    <div id="" style="position: absolute; top: 30%; left: 50%;">
+        <div style="font-size: 20pt; font-weight: 700; ">
+            {{$laeufer->vorname}} {{$laeufer->nachname}}
+        </div>
+        <div style="font-size: 12pt; font-weight: 400; ">
+            @if($laeufer->geburtsdatum != null)
+                geb. {{$laeufer->geburtsdatum?->format('d.m.Y')}}
+            @endif
+        </div>
+    </div>
+    <div id="" style="position: absolute; top: 50%; left: 30%;">
+
+        <div style="font-size: 16pt; font-weight: 400; ">
+                In der Laufzeit von 2 Stunden absolvierte Irene Schumann 26 Runden zu je 400m was einer Laufstrecke von 10.4 km
+                entspricht.
+            </div>
+    </div>
 
 
-
-    <p class="">
-        Mit freundlichen Grüßen
-    </p>
-    <p>
-        &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;
-
-    </p>
-
-    <p class="">
-
-        Cornelia Ludwig &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;
-
-    </p>
-    <p class="">
-        Projektverantwortliche        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-    </p>
 
 
 </div>
