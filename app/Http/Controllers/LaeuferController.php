@@ -134,7 +134,7 @@ class LaeuferController extends Controller
         $pdf = PDF::loadView('laeufer.bescheinigung', [
             'laeufer' => $laeufer
         ]);
-        return $pdf->download('Bescheinigung.pdf');
+        return $pdf->stream('Bescheinigung.pdf');
 
     }
 
