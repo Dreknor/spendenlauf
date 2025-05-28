@@ -70,7 +70,7 @@
     </style>
 </head>
 <body>
-    <img src="{{storage_path('app/briefbogen.png')}}" id="bg" style="margin-left: -30px;">
+    <img src="{{storage_path('app/urkunde_blank-scaled.png')}}" id="bg" style="margin-left: -30px;">
 
 
 <div style="z-index: 100">
