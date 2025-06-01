@@ -87,8 +87,7 @@
     <div id="" style="position: absolute; top: 50%; left: 30%;">
 
         <div style="font-size: 16pt; font-weight: 400; ">
-                In der Laufzeit von 2 Stunden absolvierte Irene Schumann 26 Runden zu je 400m was einer Laufstrecke von 10.4 km
-                entspricht.
+                In der Laufzeit von 2 Stunden absolvierte  {{$laeufer->vorname}} {{$laeufer->nachname}} {{$laeufer->runden}} Runden zu je 400m was einer Laufstrecke von {{$laeufer->runden * 0.4}} km entspricht.
             </div>
     </div>
 
