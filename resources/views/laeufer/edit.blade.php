@@ -146,6 +146,18 @@
                                     </div>
                                 </div>
                             @endif
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col">
+                                        <i>Der folgende Link verweist auf das öffentliche Profil des Läufers. So können sich Sponsoren für den Läufer eintragen.</i>
+                                    </div>
+                                    <div class="col">
+                                        <a href="{{url('laeufer/public/'.$Laeufer->uuid)}}" class="card-link">
+                                            {{url('laeufer/public/'.$Laeufer->uuid)}}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6 col-sm-12">

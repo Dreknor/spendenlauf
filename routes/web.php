@@ -18,6 +18,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/laeufer/public/{uuid}', [App\Http\Controllers\PublicSponsorController::class, 'show'])->name('public.sponsor.show');
+Route::post('/laeufer/public/{uuid}', [App\Http\Controllers\PublicSponsorController::class, 'store'])->name('public.sponsor.store');
 
 
 Route::get('stats/{full?}', [\App\Http\Controllers\StatsController::class, 'stats']);

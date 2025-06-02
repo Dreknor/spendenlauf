@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,12 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        \Spatie\Permission\Models\Permission::create([
-            'name' => 'edit startnummer',
-            'guard_name' => 'web',
-        ]);
+        Schema::table('laeufers', function (Blueprint $table) {
+            $table->uuid('uuid')->after('id')->default(DB::raw('UUID()'))->unique();
+        });
 
-        \Illuminate\Support\Facades\Cache::clear();
+
     }
 
     /**
@@ -24,8 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $permission = \Spatie\Permission\Models\Permission::query()
-            ->where('name', 'edit startnummer')
-            ->delete();
+        Schema::table('laeufers', function (Blueprint $table) {
+            $table->dropColumn('uuid');
+        });
     }
 };

@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Laeufer extends Model
 {
-    protected $fillable = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
+    protected $fillable = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden', 'uuid'];
 
-    protected $visible = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden'];
+    protected $visible = ['vorname', 'nachname', 'geburtsdatum', 'email', 'verwaltet_von', 'geschlecht', 'startnummer', 'runden', 'uuid'];
 
 
     protected $casts = [
