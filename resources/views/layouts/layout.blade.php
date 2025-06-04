@@ -31,6 +31,19 @@
     </a>
 </div>
 <div class="container-fluid  h-75">
+    @if(session('Meldung'))
+        <div class="container">
+            <div class="row">
+                <div class="col-12" >
+                    <div class="alert alert-{{session('type')}} alert-dismissible" role="alert">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        {{session('Meldung')}}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     @yield('content')
 </div>
 

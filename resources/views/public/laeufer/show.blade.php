@@ -1,6 +1,15 @@
 @extends('layouts.layout')
 
 @section('content')
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -46,29 +55,61 @@
                             Alter: {{$laeufer?->geburtsdatum->diffInYears()}}
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-12">
+
+                                @if($laeufer->team != null)
+                                    Team: <i>{{$laeufer->team?->name}} </i>
+                                @endif
+
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        @forelse($laeufer->sponsorings as $sponsoring)
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        Fest: EUR {{number_format($sponsoring->festBetrag, 2)}}
+                                    </div>
+                                    <div class="col-md-4">
+                                        je Runde: EUR {{number_format($sponsoring->rundenBetrag, 2)}}
+                                    </div>
+                                    <div class="col-md-4">
+                                        max.: EUR {{number_format($sponsoring->maxBetrag, 2)}}
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="list-group-item list-group-item-info">
+                                Es wurden bisher keine Spenden erfasst
+                            </li>
+                        @endforelse
+                    </ul>
+
                 </div>
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-md-6 col-sm-12 mb-2">
-                            <strong>Gesammelt Festbetrag:</strong> EUR 0.00
+                            <strong>Gesammelt Festbetrag:</strong> EUR {{number_format($laeufer->sponsorings->sum('festBetrag'), 2)}}
                         </div>
                         <div class="col-md-6 col-sm-12 mb-2">
-                            <strong>Gesammelt pro Runde:</strong> EUR 0.00
+                            <strong>Gesammelt pro Runde:</strong> EUR {{number_format($laeufer->sponsorings->sum('rundenBetrag'), 2)}}
                         </div>
                         <div class="col-md-6 col-sm-12 mb-2">
-                            <strong>Gesammelt total:</strong> EUR 0.00
+                            <strong>Gesammelt total:</strong> EUR {{number_format($laeufer->sponsorings->sum('spende'),2)}}
                         </div>
                         <div class="col-md-6 col-sm-12 mb-2">
                             <strong>Runden:</strong> {{$laeufer->runden}}
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
     @if(\Carbon\Carbon::parse(config('config.spendenlauf.date'))->gte(now()))
-        <div class="row justify-content-center">
+        <div class="row justify-content-center mt-2">
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">{{ $laeufer->vorname }} {{ $laeufer->nachname }} unterstützen</div>

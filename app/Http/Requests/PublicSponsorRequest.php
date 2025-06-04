@@ -23,7 +23,9 @@ class PublicSponsorRequest extends FormRequest
             'plz' => 'required|string|max:10',
             'ort' => 'required|string|max:255',
             'telefon' => 'nullable|string|max:255',
-            'spende' => 'required|numeric|min:0.01'
+            'maxBetrag' => 'nullable|numeric|min:0.5',
+            'rundenBetrag' => 'nullable|numeric|min:0.5',
+            'festBetrag' => 'nullable|numeric|min:0.5',
         ];
     }
 
