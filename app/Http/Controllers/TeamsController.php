@@ -19,7 +19,7 @@ class TeamsController extends Controller
             ->withSum('laeufer', 'runden')
             ->with('besitzer')
             ->unless($user->can('edit teams'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $user->id)
-                ->orWhereHas('laeufer', fn ($l) => $l->where('verwaltet_von', $user->id))))
+                ->orWhereHas('laeufer', fn ($l) => $l->verwaltetVon($user))))
             ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->input('q').'%'))
             ->orderBy('name')
             ->paginate(50)

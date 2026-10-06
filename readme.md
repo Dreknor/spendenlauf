@@ -37,6 +37,13 @@ Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, F
 4. **Abrechnung** – Zahlungsaufforderungen per Mail (Aufstellung, Bankverbindung, Verwendungszweck mit Sponsor-Nr., PayPal.me-Link, Link zur persönlichen Sponsor-Seite), Zahlungseingänge erfassen, Erinnerungen an offene Posten, vereinfachter Spendennachweis (≤ 300 €) als PDF, Export der Spenden über 300 € für Zuwendungsbestätigungen.
 5. **Auswertung** – Statistiken nach Läufern, Teams, Altersgruppen, Geschlecht, Kategorie, Klassen/Stufen, Sponsoren, Verteilung und Jahresvergleich; Excel- und PDF-Export; Klassenauswertung (PDF je Klasse für die Klassenleitungen); öffentliche Live-Statistik unter `/stats` (einbettbar, `/stats/embed` ohne Kopf/Fuß).
 
+## Doppelte Einträge
+
+- **Läufer:** Bei jeder Anmeldung (Eltern, Schnellerfassung, Übernahme aus dem Vorjahr) wird nach bereits angemeldeten Läufern gesucht – unabhängig von Groß-/Kleinschreibung, Umlaut-Schreibweise (ä/ae, ß/ss), Leerzeichen, Abkürzungen (Max/Maximilian) und kleinen Tippfehlern (`app/Services/Dubletten.php`). Gleicher Name und gleiches Geburtsdatum blockieren die Anmeldung (nur das Orga-Team kann übergehen), bei ähnlichen Namen kann bestätigt werden, dass es eine andere Person ist.
+- **Mitverwaltung:** Ist ein Kind schon vom anderen Elternteil angemeldet, wird statt einer zweiten Anmeldung die Mitverwaltung angefragt. Der anmeldende Elternteil (oder das Orga-Team) bestätigt auf der Startseite; das Orga-Team kann weitere Konten auch direkt zuordnen.
+- **Sponsoren** sind gemeinsame Datensätze: Gibt es die E-Mail-Adresse (oder Name + PLZ) schon, wird der vorhandene Sponsor verwendet; bei ähnlichen Namen wird nachgefragt. Eltern sehen bei gemeinsamen Sponsoren nur die Spenden für ihre eigenen Läufer.
+- **Bereinigung:** *Verwaltung → Doppelte Einträge* listet mögliche Dubletten. Beim Zusammenführen werden Spenden, Zahlungen, Mails, Verwalter und fehlende Angaben übernommen; Paare können als „keine Dublette“ markiert werden.
+
 ## Berechnung
 
 Alle Beträge werden zentral in `app/Services/SpendenRechner.php` berechnet (intern in Cent):

@@ -6,6 +6,7 @@ use App\Http\Requests\PublicSponsorRequest;
 use App\Models\Laeufer;
 use App\Models\Sponsor;
 use App\Models\Sponsoring;
+use App\Services\Dubletten;
 use App\Services\SpendenRechner;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +40,7 @@ class PublicSponsorController extends Controller
         $daten = $request->validated();
 
         DB::transaction(function () use ($daten, $laeufer, $event) {
-            $sponsor = $this->sponsorFinden($daten) ?? Sponsor::create(collect($daten)->only([
+            $sponsor = Dubletten::vorhandenerSponsor($daten) ?? Sponsor::create(collect($daten)->only([
                 'anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon',
             ])->all());
 
@@ -66,19 +67,5 @@ class PublicSponsorController extends Controller
             'type' => 'success',
             'status' => 'Vielen Dank für Ihre Unterstützung! Nach dem Lauf erhalten Sie eine E-Mail mit dem Spendenbetrag und den Zahlungsinformationen.',
         ]);
-    }
-
-    private function sponsorFinden(array $daten): ?Sponsor
-    {
-        return Sponsor::where('email', $daten['email'])->first()
-            ?? Sponsor::query()
-                ->where('plz', $daten['plz'])
-                ->where('ort', $daten['ort'])
-                ->when(
-                    filled($daten['firmenname'] ?? null),
-                    fn ($q) => $q->where('firmenname', $daten['firmenname']),
-                    fn ($q) => $q->where('vorname', $daten['vorname'])->where('nachname', $daten['nachname']),
-                )
-                ->first();
     }
 }

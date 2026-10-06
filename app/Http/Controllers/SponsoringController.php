@@ -18,8 +18,7 @@ class SponsoringController extends Controller
 
         $sponsorings = Sponsoring::query()
             ->with(['sponsorable', 'sponsor', 'projects'])
-            ->unless($user->can('edit sponsorings'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $user->id)
-                ->orWhereHasMorph('sponsorable', [Laeufer::class], fn ($l) => $l->where('verwaltet_von', $user->id))))
+            ->sichtbarFuer($user)
             ->when($request->filled('q'), function ($q) use ($request) {
                 $suche = '%'.$request->input('q').'%';
                 $q->where(fn ($q) => $q
@@ -49,7 +48,7 @@ class SponsoringController extends Controller
         return view('sponsorings.create', [
             'event' => $event,
             'laeufer' => Laeufer::query()
-                ->unless($user->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $user->id))
+                ->unless($user->can('edit laeufer'), fn ($q) => $q->verwaltetVon($user))
                 ->orderBy('nachname')->orderBy('vorname')->get(),
             'sponsoren' => Sponsor::query()
                 ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)))

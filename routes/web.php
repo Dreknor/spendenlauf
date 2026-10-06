@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\AbrechnungController;
 use App\Http\Controllers\AuswertungController;
+use App\Http\Controllers\DublettenController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\LaeuferController;
+use App\Http\Controllers\MitverwaltungController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\PublicSponsorController;
 use App\Http\Controllers\RundenController;
@@ -63,6 +65,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('laeufer/{laeufer}/team', [LaeuferController::class, 'teamVerlassen'])->name('laeufer.team.leave');
     Route::get('laeufer/{laeufer}/bescheinigung', [LaeuferController::class, 'bescheinigung'])->name('laeufer.bescheinigung');
 
+    // Mitverwaltung (z. B. zweiter Elternteil)
+    Route::post('laeufer/{laeufer}/mitverwaltung', [MitverwaltungController::class, 'anfragen'])->name('mitverwaltung.anfragen');
+    Route::post('laeufer/{laeufer}/mitverwalter', [MitverwaltungController::class, 'hinzufuegen'])->name('mitverwaltung.hinzufuegen');
+    Route::delete('laeufer/{laeufer}/mitverwalter/{user}', [MitverwaltungController::class, 'entfernen'])->name('mitverwaltung.entfernen');
+    Route::post('mitverwaltung/{anfrage}/annehmen', [MitverwaltungController::class, 'annehmen'])->name('mitverwaltung.annehmen');
+    Route::post('mitverwaltung/{anfrage}/ablehnen', [MitverwaltungController::class, 'ablehnen'])->name('mitverwaltung.ablehnen');
+
     Route::resource('teams', TeamsController::class)->parameters(['teams' => 'team']);
     Route::resource('sponsoren', SponsorController::class)->parameters(['sponsoren' => 'sponsor'])->except('destroy');
     Route::resource('sponsorings', SponsoringController::class)->only(['index', 'create', 'store', 'destroy']);
@@ -81,6 +90,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('startnummern', [StartnummerController::class, 'store'])->name('startnummern.store');
         Route::delete('startnummern', [StartnummerController::class, 'destroyMany'])->name('startnummern.destroy-many');
         Route::delete('startnummern/{startnummer}', [StartnummerController::class, 'destroy'])->name('startnummern.destroy');
+    });
+
+    // Dubletten bereinigen
+    Route::middleware('permission:edit laeufer|edit sponsoren')->group(function () {
+        Route::get('dubletten', [DublettenController::class, 'index'])->name('dubletten.index');
+        Route::post('dubletten/laeufer', [DublettenController::class, 'laeufer'])->name('dubletten.laeufer');
+        Route::post('dubletten/sponsoren', [DublettenController::class, 'sponsoren'])->name('dubletten.sponsoren');
+        Route::post('dubletten/ignorieren', [DublettenController::class, 'ignorieren'])->name('dubletten.ignorieren');
     });
 
     // Veranstaltungen & Klassen

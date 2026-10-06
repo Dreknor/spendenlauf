@@ -2,10 +2,12 @@
 
 namespace App\Actions;
 
+use App\Http\Controllers\MitverwaltungController;
 use App\Models\Event;
 use App\Models\Laeufer;
 use App\Models\Schulklasse;
 use App\Models\User;
+use App\Services\Dubletten;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +17,13 @@ use Illuminate\Support\Facades\DB;
  */
 class LaeuferUebernehmen
 {
-    public function __construct(private readonly Event $event) {}
+    /** @var Collection<int, Laeufer> bereits von einem anderen Konto angemeldete Läufer (Mitverwaltung angefragt) */
+    public Collection $bereitsAngemeldet;
+
+    public function __construct(private readonly Event $event)
+    {
+        $this->bereitsAngemeldet = collect();
+    }
 
     /**
      * @param  Collection<int, Laeufer>  $alteLaeufer
@@ -27,6 +35,18 @@ class LaeuferUebernehmen
         $vergabe = new Startnummernvergabe($this->event);
 
         return DB::transaction(fn () => $alteLaeufer->map(function (Laeufer $alt) use ($klassen, $vergabe, $besitzer) {
+            $vorhanden = Dubletten::laeuferKandidaten($this->event, $alt->vorname, $alt->nachname, $alt->geburtsdatum)
+                ->firstWhere('grad', Dubletten::SICHER)['laeufer'] ?? null;
+
+            if ($vorhanden) {
+                if (! $vorhanden->istVerwaltetVon($besitzer)) {
+                    MitverwaltungController::anfrageStellen($vorhanden, $besitzer);
+                    $this->bereitsAngemeldet->push($vorhanden);
+                }
+
+                return null;
+            }
+
             $neu = new Laeufer([
                 'vorname' => $alt->vorname,
                 'nachname' => $alt->nachname,
@@ -43,7 +63,7 @@ class LaeuferUebernehmen
             $vergabe->vergeben($neu);
 
             return $neu;
-        }));
+        })->filter()->values());
     }
 
     /**

@@ -20,6 +20,28 @@
             <x-stat label="Sponsoren" :value="zahl($anzahlSponsoren)" icon="gift" />
         </div>
 
+        @if ($anfragen->isNotEmpty())
+            <x-card title="Anfragen zur Mitverwaltung" subtitle="Diese Konten möchten Läufer mitverwalten, die Sie angemeldet haben (z. B. der andere Elternteil)." class="mt-6">
+                <ul class="space-y-2 text-sm">
+                    @foreach ($anfragen as $anfrage)
+                        <li class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-100">
+                            <span><strong>{{ $anfrage->user->name }}</strong> ({{ $anfrage->user->email }}) möchte <strong>{{ $anfrage->laeufer->name }}</strong> mitverwalten.</span>
+                            <span class="flex gap-2">
+                                <form method="POST" action="{{ route('mitverwaltung.annehmen', $anfrage) }}">@csrf<button class="btn-success btn-sm">Bestätigen</button></form>
+                                <form method="POST" action="{{ route('mitverwaltung.ablehnen', $anfrage) }}">@csrf<button class="btn-light btn-sm">Ablehnen</button></form>
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </x-card>
+        @endif
+
+        @if ($eigeneAnfragen->isNotEmpty())
+            <div class="mt-6 rounded-lg bg-navy-50 p-4 text-sm text-navy-800 ring-1 ring-navy-100">
+                Ihre Anfrage zur Mitverwaltung von {{ $eigeneAnfragen->map(fn ($a) => $a->laeufer?->name)->filter()->join(', ') }} wartet noch auf Bestätigung.
+            </div>
+        @endif
+
         @if ($vorjahresLaeufer->isNotEmpty())
             <x-card title="Wieder dabei?" subtitle="Diese Läufer hatten Sie bei einem früheren Spendenlauf angemeldet." class="mt-6">
                 <form method="POST" action="{{ route('laeufer.uebernehmen') }}" class="space-y-3">

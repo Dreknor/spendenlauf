@@ -36,6 +36,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Laeufer::class, 'verwaltet_von');
     }
 
+    /** Läufer, die der Benutzer mitverwaltet (zusätzlich zu den selbst angemeldeten). */
+    public function mitverwalteteLaeufer(): BelongsToMany
+    {
+        return $this->belongsToMany(Laeufer::class)->withTimestamps();
+    }
+
     public function sponsorings(): HasMany
     {
         return $this->hasMany(Sponsoring::class, 'verwaltet_von');

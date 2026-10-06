@@ -7,11 +7,15 @@ use App\Actions\Startnummernvergabe;
 use App\Enums\Kategorie;
 use App\Http\Requests\LaeuferRequest;
 use App\Mail\AddLaeuferToTeam;
+use App\Models\Event;
 use App\Models\Laeufer;
+use App\Models\MitverwaltungAnfrage;
 use App\Models\Schulklasse;
 use App\Models\Teams;
+use App\Services\Dubletten;
 use App\Services\SpendenRechner;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -37,7 +41,7 @@ class LaeuferController extends Controller
 
         $query = Laeufer::query()
             ->with(['team', 'schulklasse', 'besitzer'])
-            ->unless($user->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $user->id))
+            ->unless($user->can('edit laeufer'), fn ($q) => $q->verwaltetVon($user))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $suche = '%'.$request->input('q').'%';
                 $q->where(fn ($q) => $q->where('vorname', 'like', $suche)
@@ -86,17 +90,8 @@ class LaeuferController extends Controller
 
         $daten = $request->laeuferDaten();
 
-        $vorhanden = Laeufer::query()
-            ->where('vorname', $daten['vorname'])
-            ->where('nachname', $daten['nachname'])
-            ->when($daten['geburtsdatum'] ?? null, fn ($q, $d) => $q->whereDate('geburtsdatum', $d))
-            ->first();
-
-        if ($vorhanden) {
-            return redirect()->route('laeufer.index')->with([
-                'type' => 'warning',
-                'status' => "{$vorhanden->name} ist bereits angemeldet (Startnummer {$vorhanden->startnummer}).",
-            ]);
+        if ($antwort = $this->dublettenPruefen($request, $event, $daten)) {
+            return $antwort;
         }
 
         $laeufer = DB::transaction(function () use ($request, $daten, $event, $user) {
@@ -124,7 +119,8 @@ class LaeuferController extends Controller
         $this->authorize('view', $laeufer);
         $event = $this->event();
 
-        $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor', 'sponsorings.projects']);
+        $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor', 'sponsorings.projects', 'besitzer', 'mitverwalter',
+            'mitverwaltungAnfragen' => fn ($q) => $q->where('status', MitverwaltungAnfrage::OFFEN)->with('user')]);
         $rechner = SpendenRechner::fuer($event);
 
         return view('laeufer.edit', [
@@ -247,16 +243,51 @@ class LaeuferController extends Controller
         $alte = Laeufer::withoutGlobalScope('event')
             ->whereIn('id', $request->input('laeufer'))
             ->where('event_id', '!=', $event->id)
-            ->unless($request->user()->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $request->user()->id))
+            ->unless($request->user()->can('edit laeufer'), fn ($q) => $q->verwaltetVon($request->user()))
             ->get();
 
-        $neu = (new LaeuferUebernehmen($event))->ausfuehren($alte, $request->user());
+        $uebernahme = new LaeuferUebernehmen($event);
+        $neu = $uebernahme->ausfuehren($alte, $request->user());
 
         $ohneKlasse = $neu->filter(fn ($l) => $l->kategorie === Kategorie::Schueler && ! $l->schulklasse_id)->count();
+        $meldung = $neu->count().' Läufer übernommen.';
+        if ($ohneKlasse) {
+            $meldung .= " Bitte bei $ohneKlasse Schüler(n) die Klasse prüfen.";
+        }
+        if ($uebernahme->bereitsAngemeldet->isNotEmpty()) {
+            $meldung .= ' Bereits von einem anderen Konto angemeldet: '.$uebernahme->bereitsAngemeldet->pluck('name')->join(', ')
+                .' – die Mitverwaltung wurde angefragt.';
+        }
 
         return redirect()->route('laeufer.index')->with([
-            'type' => $ohneKlasse ? 'warning' : 'success',
-            'status' => $neu->count().' Läufer übernommen.'.($ohneKlasse ? " Bitte bei $ohneKlasse Schüler(n) die Klasse prüfen." : ''),
+            'type' => $ohneKlasse || $uebernahme->bereitsAngemeldet->isNotEmpty() ? 'warning' : 'success',
+            'status' => $meldung,
+        ]);
+    }
+
+    /**
+     * Prüft auf bereits angemeldete Läufer mit gleichem/ähnlichem Namen.
+     * Sichere Treffer (gleicher Name + Geburtsdatum) darf nur das Orga-Team übergehen,
+     * bei ähnlichen Treffern kann jeder bestätigen, dass es eine andere Person ist.
+     */
+    private function dublettenPruefen(LaeuferRequest $request, Event $event, array $daten): ?RedirectResponse
+    {
+        $kandidaten = Dubletten::laeuferKandidaten($event, $daten['vorname'], $daten['nachname'], $daten['geburtsdatum'] ?? null);
+
+        if ($kandidaten->isEmpty()) {
+            return null;
+        }
+
+        $sicher = $kandidaten->contains('grad', Dubletten::SICHER);
+        $darfUebergehen = ! $sicher || $request->user()->can('edit laeufer');
+
+        if ($darfUebergehen && $request->boolean('trotzdem_anlegen')) {
+            return null;
+        }
+
+        return back()->withInput()->with([
+            'dubletten' => $kandidaten->map(fn ($k) => ['id' => $k['laeufer']->id, 'grad' => $k['grad']])->all(),
+            'dubletten_uebergehbar' => $darfUebergehen,
         ]);
     }
 

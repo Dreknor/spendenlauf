@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToEvent;
 use App\Services\SpendenRechner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -53,6 +54,22 @@ class Sponsoring extends Model
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Projects::class);
+    }
+
+    /**
+     * Spenden, die ein Benutzer sehen darf: alle mit „edit sponsorings“, sonst selbst eingetragene
+     * sowie Spenden für eigene/mitverwaltete Läufer und eigene Teams.
+     */
+    public function scopeSichtbarFuer(Builder $query, User $user): Builder
+    {
+        if ($user->canAny(['edit sponsorings', 'manage abrechnung'])) {
+            return $query;
+        }
+
+        return $query->where(fn ($q) => $q
+            ->where($q->qualifyColumn('verwaltet_von'), $user->id)
+            ->orWhereHasMorph('sponsorable', [Laeufer::class], fn ($l) => $l->verwaltetVon($user))
+            ->orWhereHasMorph('sponsorable', [Teams::class], fn ($t) => $t->where('verwaltet_von', $user->id)));
     }
 
     public function istTeamSponsoring(): bool

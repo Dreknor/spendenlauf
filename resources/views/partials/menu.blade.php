@@ -33,11 +33,14 @@
     @endcan
 @endif
 
-@if ($u->canAny(['edit event', 'edit user', 'import export']))
+@if ($u->canAny(['edit event', 'edit user', 'import export', 'edit laeufer', 'edit sponsoren']))
     <p class="px-3 pt-5 pb-1 text-xs font-semibold uppercase tracking-wider text-navy-300">Verwaltung</p>
     @can('edit event')
         <x-nav-link :href="route('events.index')" icon="calendar" :active="request()->routeIs('events.*', 'klassen.*')">Veranstaltungen</x-nav-link>
     @endcan
+    @if ($u->canAny(['edit laeufer', 'edit sponsoren']))
+        <x-nav-link :href="route('dubletten.index')" icon="users" :active="request()->routeIs('dubletten.*')">Doppelte Einträge</x-nav-link>
+    @endif
     @can('edit user')
         <x-nav-link :href="route('users.index')" icon="users" :active="request()->routeIs('users.*')">Benutzer</x-nav-link>
     @endcan

@@ -13,6 +13,7 @@ use App\Models\Sponsor;
 use App\Models\Sponsoring;
 use App\Models\Teams;
 use App\Models\Zahlung;
+use App\Services\Dubletten;
 use App\Services\SpendenRechner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +68,7 @@ class SchnellerfassungController extends Controller
 
         foreach ((array) $request->input('sponsoren', []) as $i => $eintrag) {
             if (empty($eintrag['sponsor_id'])) {
-                $regeln += SponsorRequest::regeln(null, $eintrag['anrede'] ?? null, "sponsoren.$i.");
+                $regeln += SponsorRequest::regeln(null, $eintrag['anrede'] ?? null, "sponsoren.$i.", emailEindeutig: false);
             }
             $regeln += collect(SponsoringRequest::betragsRegeln("sponsoren.$i."))->except(["sponsoren.$i.projects", "sponsoren.$i.projects.*"])->all();
         }
@@ -91,6 +92,18 @@ class SchnellerfassungController extends Controller
             }
         });
         $daten = $validator->validate();
+
+        if ($istNeu) {
+            $kandidaten = Dubletten::laeuferKandidaten($event, $daten['vorname'], $daten['nachname'], $daten['geburtsdatum'] ?? null);
+            $darfUebergehen = ! $kandidaten->contains('grad', Dubletten::SICHER) || $user->can('edit laeufer');
+
+            if ($kandidaten->isNotEmpty() && ! ($darfUebergehen && $request->boolean('trotzdem_anlegen'))) {
+                return back()->withInput()->with([
+                    'dubletten' => $kandidaten->map(fn ($k) => ['id' => $k['laeufer']->id, 'grad' => $k['grad']])->all(),
+                    'dubletten_uebergehbar' => $darfUebergehen,
+                ]);
+            }
+        }
 
         $ergebnis = DB::transaction(function () use ($daten, $event, $user, $istNeu) {
             $vergabe = new Startnummernvergabe($event);
@@ -124,9 +137,10 @@ class SchnellerfassungController extends Controller
             $anzahl = 0;
             $bar = 0;
             foreach ($daten['sponsoren'] ?? [] as $eintrag) {
+                $sponsorDaten = collect($eintrag)->only(['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'telefon', 'strasse', 'plz', 'ort'])->all();
                 $sponsor = ! empty($eintrag['sponsor_id'])
                     ? Sponsor::findOrFail($eintrag['sponsor_id'])
-                    : Sponsor::create(collect($eintrag)->only(['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'telefon', 'strasse', 'plz', 'ort'])->all());
+                    : (Dubletten::vorhandenerSponsor($sponsorDaten) ?? Sponsor::create($sponsorDaten));
                 $sponsor->users()->syncWithoutDetaching([$user->id]);
 
                 $sponsoring = new Sponsoring([

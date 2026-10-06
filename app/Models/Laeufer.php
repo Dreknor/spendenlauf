@@ -6,9 +6,12 @@ use App\Enums\Kategorie;
 use App\Models\Concerns\BelongsToEvent;
 use App\Services\SpendenRechner;
 use App\Support\CurrentEvent;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -95,8 +98,34 @@ class Laeufer extends Model
         return $this->morphMany(Sponsoring::class, 'sponsorable');
     }
 
+    /** Weitere Benutzer (z. B. zweiter Elternteil), die den Läufer mitverwalten. */
+    public function mitverwalter(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
+    }
+
+    public function mitverwaltungAnfragen(): HasMany
+    {
+        return $this->hasMany(MitverwaltungAnfrage::class);
+    }
+
+    /** Läufer, die der Benutzer angemeldet hat oder mitverwaltet. */
+    public function scopeVerwaltetVon(Builder $query, User $user): Builder
+    {
+        return $query->where(fn ($q) => $q
+            ->where($q->qualifyColumn('verwaltet_von'), $user->id)
+            ->orWhereHas('mitverwalter', fn ($m) => $m->whereKey($user->id)));
+    }
+
     public function istVerwaltetVon(?User $user): bool
     {
-        return $user !== null && (int) $this->verwaltet_von === (int) $user->id;
+        if ($user === null) {
+            return false;
+        }
+
+        return (int) $this->verwaltet_von === (int) $user->id
+            || ($this->relationLoaded('mitverwalter')
+                ? $this->mitverwalter->contains('id', $user->id)
+                : $this->mitverwalter()->whereKey($user->id)->exists());
     }
 }

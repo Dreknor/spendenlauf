@@ -75,6 +75,49 @@
                 @endif
             </x-card>
 
+            <x-card title="Verwaltet von" subtitle="Alle hier genannten Konten sehen und bearbeiten den Läufer.">
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-center justify-between gap-2">
+                        <span>{{ $laeufer->besitzer?->name ?? '–' }} <span class="text-xs text-slate-400">angemeldet</span></span>
+                    </li>
+                    @foreach ($laeufer->mitverwalter as $m)
+                        <li class="flex items-center justify-between gap-2">
+                            <span>{{ $m->name }}</span>
+                            @if (auth()->user()->is($m) || auth()->user()->can('update', $laeufer))
+                                <form method="POST" action="{{ route('mitverwaltung.entfernen', [$laeufer, $m]) }}" onsubmit="return confirm('Mitverwaltung beenden?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-xs text-red-600 hover:underline">entfernen</button>
+                                </form>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+
+                @if ($laeufer->mitverwaltungAnfragen->isNotEmpty() && (auth()->user()->can('edit laeufer') || (int) $laeufer->verwaltet_von === auth()->id()))
+                    <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Offene Anfragen</p>
+                    <ul class="mt-2 space-y-2 text-sm">
+                        @foreach ($laeufer->mitverwaltungAnfragen as $anfrage)
+                            <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 p-2">
+                                <span>{{ $anfrage->user->name }} <span class="text-xs text-slate-500">{{ $anfrage->user->email }}</span></span>
+                                <span class="flex gap-1">
+                                    <form method="POST" action="{{ route('mitverwaltung.annehmen', $anfrage) }}">@csrf<button class="btn-success btn-sm">Bestätigen</button></form>
+                                    <form method="POST" action="{{ route('mitverwaltung.ablehnen', $anfrage) }}">@csrf<button class="btn-light btn-sm">Ablehnen</button></form>
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @can('update', $laeufer)
+                    <form method="POST" action="{{ route('mitverwaltung.hinzufuegen', $laeufer) }}" class="mt-4 flex items-end gap-2">
+                        @csrf
+                        <x-input name="email" type="email" label="Weiteres Konto hinzufügen" placeholder="E-Mail-Adresse des Kontos" class="flex-1" />
+                        <button type="submit" class="btn-light">Hinzufügen</button>
+                    </form>
+                    <p class="hint">Die Person muss bereits ein Konto haben.</p>
+                @endcan
+            </x-card>
+
             <x-card title="Daten bearbeiten">
                 @if ($event->laufVorbei() && ! auth()->user()->can('edit laeufer'))
                     <dl class="space-y-2 text-sm">

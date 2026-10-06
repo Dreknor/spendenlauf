@@ -24,6 +24,12 @@
 
         {{-- Läufer --}}
         <div class="space-y-6 xl:col-span-2">
+            @include('laeufer._dubletten', ['modus' => 'schnellerfassung'])
+            @if (session('dubletten') && session('dubletten_uebergehbar'))
+                <div x-show="!laeufer">
+                    <x-checkbox name="trotzdem_anlegen" label="Es ist eine andere Person – trotzdem neu anlegen" class="rounded-lg bg-amber-50 p-3" />
+                </div>
+            @endif
             <x-card title="1. Läufer">
                 <template x-if="laeufer">
                     <div class="flex items-center justify-between gap-3 rounded-lg bg-esz-50 p-3 ring-1 ring-esz-200">

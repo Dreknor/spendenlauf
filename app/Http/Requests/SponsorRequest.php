@@ -14,10 +14,13 @@ class SponsorRequest extends FormRequest
 
     public function rules(): array
     {
-        return self::regeln($this->route('sponsor')?->id, $this->input('anrede'));
+        // Beim Anlegen wird ein Sponsor mit bekannter E-Mail wiederverwendet (siehe SponsorController::store)
+        $bearbeiten = $this->route('sponsor') !== null;
+
+        return self::regeln($this->route('sponsor')?->id, $this->input('anrede'), '', $bearbeiten);
     }
 
-    public static function regeln(?int $ignoriereId = null, ?string $anrede = null, string $praefix = ''): array
+    public static function regeln(?int $ignoriereId = null, ?string $anrede = null, string $praefix = '', bool $emailEindeutig = true): array
     {
         $istFirma = $anrede === 'Firma';
 
@@ -26,7 +29,7 @@ class SponsorRequest extends FormRequest
             $praefix.'firmenname' => ['nullable', Rule::requiredIf($istFirma), 'string', 'max:190'],
             $praefix.'vorname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
             $praefix.'nachname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
-            $praefix.'email' => ['nullable', 'email', 'max:190', Rule::unique('sponsors', 'email')->ignore($ignoriereId)],
+            $praefix.'email' => array_filter(['nullable', 'email', 'max:190', $emailEindeutig ? Rule::unique('sponsors', 'email')->ignore($ignoriereId) : null]),
             $praefix.'telefon' => ['nullable', 'string', 'max:50'],
             $praefix.'strasse' => ['required', 'string', 'max:190'],
             $praefix.'plz' => ['required', 'string', 'max:10'],

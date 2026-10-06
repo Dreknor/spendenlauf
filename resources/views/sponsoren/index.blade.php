@@ -20,7 +20,7 @@
                         <td class="text-slate-600">{{ trim($s->plz.' '.$s->ort) ?: '–' }}</td>
                         <td class="text-slate-600">{{ $s->email ?? '–' }}</td>
                         <td class="num">{{ $s->sponsorings_count }}</td>
-                        <td class="num">{{ euro($bilanz->sponsorSoll($s->id)) }}</td>
+                        <td class="num">{{ euro($summen[$s->id] ?? 0) }}</td>
                     </tr>
                 @endforeach
                 </tbody>

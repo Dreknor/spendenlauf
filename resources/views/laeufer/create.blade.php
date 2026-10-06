@@ -1,6 +1,8 @@
 <x-layouts.app title="Läufer anmelden">
     <x-page-header title="Läufer anmelden" :subtitle="$event->name.' am '.$event->datum->format('d.m.Y')" />
 
+    @include('laeufer._dubletten', ['modus' => 'anmeldung'])
+
     <form method="POST" action="{{ route('laeufer.store') }}" class="grid gap-6 lg:grid-cols-3">
         @csrf
         <x-card title="Angaben zum Läufer" class="lg:col-span-2">
@@ -33,6 +35,9 @@
                 </div>
             </x-card>
 
+            @if (session('dubletten') && session('dubletten_uebergehbar'))
+                <x-checkbox name="trotzdem_anlegen" label="Es ist eine andere Person – trotzdem anmelden" class="rounded-lg bg-amber-50 p-3" />
+            @endif
             <button type="submit" class="btn-primary btn-lg w-full">Läufer anmelden</button>
         </div>
     </form>

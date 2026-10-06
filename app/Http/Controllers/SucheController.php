@@ -25,7 +25,7 @@ class SucheController extends Controller
 
         return Laeufer::query()
             ->with(['schulklasse', 'team'])
-            ->unless($user->canAny(['edit laeufer', 'schnellerfassung', 'edit runden']), fn ($b) => $b->where('verwaltet_von', $user->id))
+            ->unless($user->canAny(['edit laeufer', 'schnellerfassung', 'edit runden']), fn ($b) => $b->verwaltetVon($user))
             ->where(fn ($b) => $b->where('startnummer', ctype_digit($q) ? (int) $q : -1)
                 ->orWhere('nachname', 'like', "%$q%")
                 ->orWhere('vorname', 'like', "%$q%")

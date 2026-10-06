@@ -8,16 +8,23 @@
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
-            <div class="grid grid-cols-3 gap-4">
-                <x-stat label="Spendensumme" :value="euro($konto->sollCent)" accent />
-                <x-stat label="Bezahlt" :value="euro($konto->istCent)" />
-                <x-stat label="Status" :value="$konto->status()->label()" />
-            </div>
-            <x-card title="Spenden" :padding="false">
-                @if ($sponsor->sponsorings->isEmpty())
+            @if ($konto)
+                <div class="grid grid-cols-3 gap-4">
+                    <x-stat label="Spendensumme" :value="euro($konto->sollCent)" accent />
+                    <x-stat label="Bezahlt" :value="euro($konto->istCent)" />
+                    <x-stat label="Status" :value="$konto->status()->label()" />
+                </div>
+            @else
+                <div class="grid grid-cols-2 gap-4">
+                    <x-stat label="Spenden für Ihre Läufer" :value="euro($summe)" accent />
+                    <x-stat label="Zusagen" :value="$sponsorings->count()" />
+                </div>
+            @endif
+            <x-card title="Spenden" :subtitle="$konto ? null : 'Sie sehen nur die Spenden für Läufer und Teams, die Sie verwalten.'" :padding="false">
+                @if ($sponsorings->isEmpty())
                     <div class="p-6"><x-empty message="Für diesen Lauf noch keine Spenden." /></div>
                 @else
-                    @include('sponsorings._tabelle', ['sponsorings' => $sponsor->sponsorings, 'zeigeSponsor' => false])
+                    @include('sponsorings._tabelle', ['sponsorings' => $sponsorings, 'zeigeSponsor' => false])
                 @endif
             </x-card>
         </div>
