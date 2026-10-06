@@ -20,7 +20,7 @@ it('erfasst Läufer, Startnummer, Sponsoren und Barzahlung in einem Schritt', fu
         'startnummer' => 77, 'teamname' => 'Die Schnellen',
         'sponsoren' => [
             ['sponsor_id' => $bekannt->id, 'rundenBetrag' => 1, 'ziel' => 'laeufer'],
-            ['anrede' => 'Herr', 'vorname' => 'Opa', 'nachname' => 'Lauf', 'festBetrag' => 20, 'bar' => 20, 'ziel' => 'team'],
+            ['anrede' => 'Herr', 'vorname' => 'Opa', 'nachname' => 'Lauf', 'strasse' => 'Am Bach 2', 'plz' => '01445', 'ort' => 'Radebeul', 'festBetrag' => 20, 'bar' => 20, 'ziel' => 'team'],
         ],
     ])->assertRedirect(route('schnellerfassung.create'))->assertSessionHas('letzte_startnummer', 77);
 
@@ -31,6 +31,15 @@ it('erfasst Läufer, Startnummer, Sponsoren und Barzahlung in einem Schritt', fu
         ->and(Sponsoring::count())->toBe(2)
         ->and(Sponsoring::where('sponsorable_type', 'team')->count())->toBe(1)
         ->and((float) Zahlung::sole()->betrag)->toBe(20.0);
+});
+
+it('verlangt die Anschrift neuer Sponsoren', function () {
+    $this->actingAs($this->helfer)->post(route('schnellerfassung.store'), [
+        'vorname' => 'Tom', 'nachname' => 'Test', 'kategorie' => 'extern',
+        'sponsoren' => [['anrede' => 'Frau', 'vorname' => 'Oma', 'nachname' => 'Test', 'festBetrag' => 10]],
+    ])->assertSessionHasErrors(['sponsoren.0.strasse', 'sponsoren.0.plz', 'sponsoren.0.ort']);
+
+    expect(Sponsor::count())->toBe(0);
 });
 
 it('lehnt eine bereits vergebene Startnummer ab', function () {

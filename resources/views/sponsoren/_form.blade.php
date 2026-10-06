@@ -19,9 +19,9 @@
         <x-input name="email" type="email" label="E-Mail" :value="$sponsor?->email" hint="Für Dank und Zahlungsinformationen nach dem Lauf." />
         <x-input name="telefon" type="tel" label="Telefon" :value="$sponsor?->telefon" />
     </div>
-    <x-input name="strasse" label="Straße und Hausnummer" :value="$sponsor?->strasse" />
+    <x-input name="strasse" label="Straße und Hausnummer" :value="$sponsor?->strasse" required />
     <div class="grid gap-4 sm:grid-cols-3">
-        <x-input name="plz" label="PLZ" :value="$sponsor?->plz" />
-        <x-input name="ort" label="Ort" :value="$sponsor?->ort" class="sm:col-span-2" />
+        <x-input name="plz" label="PLZ" :value="$sponsor?->plz" required />
+        <x-input name="ort" label="Ort" :value="$sponsor?->ort" class="sm:col-span-2" required />
     </div>
 </div>

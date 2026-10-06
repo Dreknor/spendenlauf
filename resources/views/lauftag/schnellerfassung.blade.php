@@ -132,9 +132,9 @@
                             <input type="text" :name="`sponsoren[${i}][nachname]`" x-model="s.nachname" placeholder="Nachname" :required="!s.sponsor_id && s.anrede !== 'Firma'">
                             <input type="email" :name="`sponsoren[${i}][email]`" x-model="s.email" placeholder="E-Mail (für Zahlungsinfo)">
                             <input type="tel" :name="`sponsoren[${i}][telefon]`" x-model="s.telefon" placeholder="Telefon">
-                            <input type="text" :name="`sponsoren[${i}][strasse]`" x-model="s.strasse" placeholder="Straße" class="sm:col-span-2">
-                            <input type="text" :name="`sponsoren[${i}][plz]`" x-model="s.plz" placeholder="PLZ">
-                            <input type="text" :name="`sponsoren[${i}][ort]`" x-model="s.ort" placeholder="Ort">
+                            <input type="text" :name="`sponsoren[${i}][strasse]`" x-model="s.strasse" placeholder="Straße und Hausnummer *" class="sm:col-span-2" :required="!s.sponsor_id">
+                            <input type="text" :name="`sponsoren[${i}][plz]`" x-model="s.plz" placeholder="PLZ *" :required="!s.sponsor_id">
+                            <input type="text" :name="`sponsoren[${i}][ort]`" x-model="s.ort" placeholder="Ort *" :required="!s.sponsor_id">
                         </div>
                     </div>
 

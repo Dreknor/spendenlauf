@@ -78,6 +78,9 @@ class SchnellerfassungController extends Controller
             'sponsoren.*.vorname' => 'Vorname des Sponsors',
             'sponsoren.*.firmenname' => 'Firmenname',
             'sponsoren.*.email' => 'E-Mail des Sponsors',
+            'sponsoren.*.strasse' => 'Straße des Sponsors',
+            'sponsoren.*.plz' => 'PLZ des Sponsors',
+            'sponsoren.*.ort' => 'Ort des Sponsors',
         ]);
         $validator->after(function ($v) use ($request) {
             foreach ((array) $request->input('sponsoren', []) as $i => $eintrag) {

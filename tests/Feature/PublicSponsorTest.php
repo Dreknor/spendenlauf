@@ -75,3 +75,8 @@ it('nimmt nach dem Lauf keine Zusagen mehr an', function () {
 it('liefert 404 für unbekannte Läufer', function () {
     $this->get(route('public.sponsor.show', 'gibt-es-nicht'))->assertNotFound();
 });
+
+it('verlangt die vollständige Anschrift', function () {
+    $this->post(route('public.sponsor.store', $this->laeufer->uuid), sponsorFormular(['strasse' => '', 'plz' => '', 'ort' => '']))
+        ->assertSessionHasErrors(['strasse', 'plz', 'ort']);
+});

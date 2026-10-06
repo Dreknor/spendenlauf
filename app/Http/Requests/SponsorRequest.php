@@ -28,9 +28,9 @@ class SponsorRequest extends FormRequest
             $praefix.'nachname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
             $praefix.'email' => ['nullable', 'email', 'max:190', Rule::unique('sponsors', 'email')->ignore($ignoriereId)],
             $praefix.'telefon' => ['nullable', 'string', 'max:50'],
-            $praefix.'strasse' => ['nullable', 'string', 'max:190'],
-            $praefix.'plz' => ['nullable', 'string', 'max:10'],
-            $praefix.'ort' => ['nullable', 'string', 'max:190'],
+            $praefix.'strasse' => ['required', 'string', 'max:190'],
+            $praefix.'plz' => ['required', 'string', 'max:10'],
+            $praefix.'ort' => ['required', 'string', 'max:190'],
         ];
     }
 
