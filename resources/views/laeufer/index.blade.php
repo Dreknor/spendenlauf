@@ -1,102 +1,50 @@
-@extends('layouts.app')
+<x-layouts.app :title="auth()->user()->can('edit laeufer') ? 'Läufer' : 'Meine Läufer'">
+    <x-page-header :title="auth()->user()->can('edit laeufer') ? 'Läufer' : 'Meine Läufer'" :subtitle="$laeufer->total().' Läufer'">
+        @if ($event->anmeldungOffen() || auth()->user()->can('edit laeufer'))
+            <a href="{{ route('laeufer.create') }}" class="btn-primary"><x-icon name="plus" class="size-4" /> Läufer anmelden</a>
+        @endif
+    </x-page-header>
 
-@section('content')
-    <div class="container-fluid">
-        <div class="card">
-            <div class="card-header bg-info">
-                <div class="row">
-                    <div class="col-md-8 col-sm-12">
-                        <h5 class="card-title text-white">
-                            {{__('Läufer-Übersicht')}}
-                        </h5>
-                    </div>
-                    <div class="col-md-4 col-sm-12 content-center">
-                        <a href="{{url('laeufer/create')}}" class="btn btn-success">
-                            <i class="fas fa-user-plus"></i>
-                            {{__('Läufer anmelden')}}
-                        </a>
-                    </div>
-                </div>
+    <x-search-form placeholder="Name oder Startnummer" class="mb-4">
+        <x-select name="kategorie" :options="\App\Enums\Kategorie::options()" :selected="request('kategorie')" placeholder="alle Kategorien" class="w-44" />
+        @if ($klassen->isNotEmpty())
+            <x-select name="klasse" :options="$klassen" :selected="request('klasse')" placeholder="alle Klassen" class="w-36" />
+        @endif
+    </x-search-form>
 
-            </div>
-            <div class="card-body">
-                @if(count($laeufer)<1)
-                    <p>
-                        {{__('Sie haben bisher keine Läufer angemeldet.')}}
-                    </p>
-                @else
-                    <div class="table-responsive-md  ">
-                        <table class="table table-striped">
-                        <thead>
-                            <th>{{__('Startnummer')}}</th>
-                            <th>{{__('Familienname')}}</th>
-                            <th>{{__('Vorname')}}</th>
-                            <th>{{__('Alter')}}</th>
-                            <th>{{__('Team')}}</th>
-                            @can('edit laeufer')
-                                <th>{{__('Ersteller')}}</th>
-                            @endcan
-                            <th></th>
-                        </thead>
-                        <tbody>
-                            @foreach($laeufer as $Laeufer)
-                                <tr>
-                                    <td>
-                                        {{$Laeufer->startnummer}}
-                                    </td>
-                                    <td>
-                                        {{$Laeufer->nachname}}
-                                    </td>
-                                    <td>
-                                        {{$Laeufer->vorname}}
-                                    </td>
-                                    <td>
-                                        {{$Laeufer->age}}
-                                    </td>
-                                    <td>
-                                        @if(isset($Laeufer->team))
-                                            {{$Laeufer->team->name}}
-                                        @else
-                                            <a href="{{url('laeufer/'.$Laeufer->id.'/addTeam')}}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-user-friends d-block d-md-none"></i>
-                                                <div class="d-none d-md-block">
-                                                    {{__('Team hinzufügen')}}
-                                                </div>
-                                            </a>
-                                        @endif
-                                    </td>
-                                    @can('edit laeufer')
-                                        <td>{{$Laeufer->besitzer->name}}</td>
-                                    @endcan
-                                    <td>
-                                        <a href="{{url('laeufer/'.$Laeufer->id.'/edit')}}" class="btn btn-sm btn-outline-warning">
-                                            <i class="fas fa-user-edit d-block d-md-none "></i>
-                                            <div class="d-none d-md-block">
-                                                {{__('anzeigen')}}
-                                            </div>
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    </div>
-                @endif
-            </div>
+    @if ($laeufer->isEmpty())
+        <x-empty message="Keine Läufer gefunden." />
+    @else
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                <tr>
+                    <x-sort-th column="startnummer" label="Nr." />
+                    <x-sort-th column="nachname" label="Name" />
+                    <th>Kategorie</th>
+                    <th>Team</th>
+                    <x-sort-th column="geburtsdatum" label="Alter" />
+                    <x-sort-th column="runden" label="Runden" num />
+                    <th class="num">Spenden</th>
+                    @can('edit laeufer')<th>Angemeldet von</th>@endcan
+                </tr>
+                </thead>
+                <tbody>
+                @foreach ($laeufer as $l)
+                    <tr>
+                        <td class="font-semibold tabular-nums">{{ $l->startnummer }}</td>
+                        <td><a href="{{ route('laeufer.edit', $l) }}" class="font-medium">{{ $l->nachname }}, {{ $l->vorname }}</a></td>
+                        <td class="text-slate-600">{{ $l->kategorie?->label() ?? '–' }}@if ($l->schulklasse) <x-badge color="blue">{{ $l->schulklasse->name }}</x-badge>@endif</td>
+                        <td class="text-slate-600">{{ $l->team?->name ?? '–' }}</td>
+                        <td class="tabular-nums">{{ $l->age ?? '–' }}</td>
+                        <td class="num">{{ $l->runden }}</td>
+                        <td class="num">{{ euro($bilanz->laeuferSpende($l->id)) }}</td>
+                        @can('edit laeufer')<td class="text-xs text-slate-500">{{ $l->besitzer?->name }}</td>@endcan
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
         </div>
-    </div>
-@endsection
-@push('js')
-    <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready( function () {
-            $('table').DataTable();
-        } );
-    </script>
-
-
-@endpush
-
-@section('css')
-    <link href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet" />
-@endsection
+        <div class="mt-4">{{ $laeufer->links() }}</div>
+    @endif
+</x-layouts.app>

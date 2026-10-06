@@ -1,286 +1,99 @@
-@extends('layouts.app')
+<x-layouts.app :title="$laeufer->name">
+    <x-page-header :title="$laeufer->name" :subtitle="collect([$laeufer->kategorie?->label(), $laeufer->schulklasse ? 'Klasse '.$laeufer->schulklasse->name : null, $laeufer->team ? 'Team '.$laeufer->team->name : null])->filter()->join(' · ')">
+        <span class="inline-flex items-center rounded-lg bg-navy-800 px-3 py-2 text-sm font-bold text-white">Startnummer {{ $laeufer->startnummer ?? '–' }}</span>
+        @if ($event->laufVorbei() && $laeufer->runden > 0)
+            <a href="{{ route('laeufer.bescheinigung', $laeufer) }}" class="btn-light" target="_blank"><x-icon name="printer" class="size-4" /> Urkunde</a>
+        @endif
+    </x-page-header>
 
-@section('content')
-    <div class="container-fluid">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">
-                    {{__('Läufer bearbeiten')}}
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 col-sm-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <b>
-                                    {{__('Läuferdaten')}}
-                                </b>
-                            </div>
-                            @if(\Carbon\Carbon::today() < config('config.spendenlauf.date'))
-                                <div class="card-body">
-                                <form action="{{url('laeufer/'.$Laeufer->id)}}" method="post" class="form-horizontal">
-                                    @csrf
-                                    @method('put')
-                                    <div class="form-group row">
-                                        <label for="vorname" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Vorname') }}</label>
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <x-stat label="Spenden" :value="euro($bilanz->laeuferSpende($laeufer->id))" icon="heart" accent
+                :hint="($bilanz->laeufer[$laeufer->id]['teamanteil'] ?? 0) > 0 ? 'inkl. '.euro($bilanz->laeufer[$laeufer->id]['teamanteil']).' Anteil an Team-Spenden' : null" />
+        <x-stat label="Runden" :value="zahl($laeufer->runden)" icon="clock" />
+        <x-stat label="Strecke" :value="zahl($event->km($laeufer->runden), 1).' km'" icon="runner" />
+        <x-stat label="Sponsoren" :value="zahl($laeufer->sponsorings->count())" icon="gift" />
+    </div>
 
-                                        <div class="col-md-8 col-sm-7">
-                                            <input id="vorname" type="text" class="form-control @error('vorname') is-invalid @enderror" name="vorname" value="{{$Laeufer->vorname}}" required autocomplete="vorname" autofocus>
-
-                                            @error('vorname')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="nachname" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Nachname') }}</label>
-
-                                        <div class="col-md-8 col-sm-7">
-                                            <input id="nachname" type="text" class="form-control @error('nachname') is-invalid @enderror" name="nachname" value="{{$Laeufer->nachname}}" required autocomplete="nachname" autofocus>
-
-                                            @error('nachname')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group row">
-                                        <label for="email" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('E-Mail') }}</label>
-
-                                        <div class="col-md-8 col-sm-7">
-                                            <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{$Laeufer->email}}"  autocomplete="email">
-                                            @error('email')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group row">
-                                        <label for="geburtsdatum" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Geburtsdatum') }}</label>
-
-                                        <div class="col-md-8 col-sm-7">
-                                            <input id="geburtsdatum" type="date" class="form-control @error('geburtsdatum') is-invalid @enderror" name="geburtsdatum" value="{{optional($Laeufer->geburtsdatum)->format('Y-m-d')}}" autocomplete="geburtsdatum" autofocus>
-                                            @error('geburtsdatum')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="geschlecht" class="col-md-4 col-sm-5 col-form-label text-md-right">{{ __('Geschlecht') }}</label>
-
-                                        <div class="col-md-8 col-sm-7">
-                                            <select name="geschlecht" class="custom-select @error('geschlecht') is-invalid @enderror">
-                                                <option value="1" @if($Laeufer->geschlecht == 1) selected @endif>{{ __('männlich') }}</option>
-                                                <option value="0" @if($Laeufer->geschlecht != 1) selected @endif>{{ __('weiblich') }}</option>
-                                            </select>
-                                            @error('geschlecht')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group row">
-                                        <div class="col-md-2 col-sm-2  text-md-right">
-                                            <input type="checkbox" name="datenschutz" required checked>
-                                        </div>
-
-                                        <div class="col-md-10 col-sm-10">
-                                            <label for="geschlecht" class="">{{ __('Ich bestätige, dass der Läufer / die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) mit den Teilnahmebedingungen einverstanden ist.') }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-md-2 col-sm-2  text-md-right">
-                                            <input type="checkbox" name="bilder" required checked>
-                                        </div>
-
-                                        <div class="col-md-10 col-sm-10">
-                                            <label for="bilder" class="">{{ __('Ich bestätige, dass der Läufer/die Läuferin (bzw. der Sorgeberechtigte des Läufers / der Läuferin) das Fotografieren und die Verwendung der Fotos gemäß Fotofreigabe genehmigt.') }}</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="">
-                                        <button type="submit" class="btn btn-success btn-block collapse" id="btn-save">
-                                            {{__('Änderungen speichern')}}
-                                        </button>
-                                    </div>
-                                </form>
-
-                            </div>
-
-                            @else
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col">
-                                            <b>
-                                                Name:
-                                            </b>
-                                            {{$Laeufer->vorname}} {{$Laeufer->nachname}}
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col">
-                                            <b>
-                                                Geschlecht:
-                                            </b>
-                                            @if($Laeufer->geschlecht == 1) männlich @else weiblich @endif
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col">
-                                            <b>
-                                                Geburtsdatum:
-                                            </b>
-                                            {{optional($Laeufer->geburtsdatum)->format('d.m.Y')}}
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="card-footer">
-                                <div class="row">
-                                    <div class="col">
-                                        <i>Der folgende Link verweist auf das öffentliche Profil des Läufers. So können sich Sponsoren für den Läufer eintragen.</i>
-                                    </div>
-                                    <div class="col">
-                                        <a href="{{url('laeufer/public/'.$Laeufer->uuid)}}" class="card-link">
-                                            {{url('laeufer/public/'.$Laeufer->uuid)}}
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="space-y-6 lg:col-span-2">
+            @if ($event->anmeldungOffen())
+                @php $link = route('public.sponsor.show', $laeufer->uuid); @endphp
+                <x-card title="Persönlicher Sponsor-Link" subtitle="Diesen Link an Familie, Freunde, Nachbarn oder Firmen schicken – Sponsoren können ihre Spende dort selbst eintragen.">
+                    <div x-data="{ kopiert: false }" class="flex flex-col gap-2 sm:flex-row">
+                        <input type="text" readonly value="{{ $link }}" class="mt-0! font-mono text-xs" @focus="$el.select()" aria-label="Sponsor-Link">
+                        <button type="button" class="btn-secondary shrink-0" @click="navigator.clipboard.writeText(@js($link)); kopiert = true; setTimeout(() => kopiert = false, 2000)">
+                            <x-icon name="link" class="size-4" /> <span x-text="kopiert ? 'Kopiert!' : 'Kopieren'">Kopieren</span>
+                        </button>
                     </div>
-                    <div class="col-md-6 col-sm-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <b>
-                                    {{__('Spendenlauf')}} {{config('config.spendenlauf.date')->format('Y')}}
-                                </b>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 col-sm-12">
-                                        {{__('Startnummer:')}} {{$Laeufer->startnummer}}
-                                    </div>
-                                    <div class="col-md-6 col-sm-12">
-                                       {{__('Runden:')}} @if(is_null($Laeufer->runden)) 0 @else {{$Laeufer->runden}} @endif
-                                    </div>
-                                </div>
-                                @if(!is_null($Laeufer->runden) and \Carbon\Carbon::today() >= config('config.spendenlauf.date'))
-                                    <div class="row">
-                                        <div class="col">
-                                            <a href="{{url('laeufer/'.$Laeufer->id.'/bestaetigung')}}" class="btn btn-outline-info">
-                                                <i class="fa fa-file-pdf pl-2"></i> Bestätigung Teilnahme
-                                            </a>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <b>
-                                    {{__('Team')}}
-                                </b>
-                            </div>
-                            <div class="card-body">
-                                @if($Laeufer->team_id != null)
-                                    <div class="row mx-auto">
-                                        <div class="col">
-                                            <a href="{{url("teams/".$Laeufer->team->id)}}" class="btn btn-outline-info btn-block @if(!auth()->user()->can('edit teams') and $Laeufer->team->besitzer->id != auth()->user()->id) disabled @endif ">
-                                                {{$Laeufer->team->name}}
-                                            </a>
-                                        </div>
-                                        <div class="col">
-                                            <form action="{{url("laeufer/$Laeufer->id/removeTeam")}}" method="post">
-                                                @csrf
-                                                @method('put')
-                                                <button type="submit" class="btn btn-danger">
-                                                    {{__('Team verlassen')}}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-
-                                @else
-                                    <p>
-                                        {{__('Der Läufer ist in keinem Team')}}
-                                    </p>
-                                        <a href="{{url('laeufer/'.$Laeufer->id.'/addTeam')}}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-user-friends d-block d-md-none"></i>
-                                            <div class="d-none d-md-block">
-                                                {{__('Team hinzufügen')}}
-                                            </div>
-                                        </a>
-                                @endif
-                            </div>
-                        </div>
-
-                        <div class="card">
-                                <div class="card-header">
-                                    <p class="card-title">
-                                        <b>
-                                            {{__('Sponsorings')}}
-                                        </b>
-                                    </p>
-                                </div>
-                                <div class="card-body">
-                                    <p class="small text-muted">
-                                        {{__('Die Beträge sind in der Reihenfolge Festbetrag, Rundenbetrag und maximaler Betrag angegeben.')}}
-                                    </p>
-                                    <ul class="list-group">
-                                        @foreach($Laeufer->sponsorings as $sponsoring)
-                                           @include('elements.SponsoringItem')
-                                        @endforeach
-                                    </ul>
-
-                                </div>
-                            </div>
+                    @php $text = rawurlencode("Ich laufe beim {$event->name} am {$event->datum->format('d.m.Y')} für gute Zwecke. Unterstützt du mich? $link"); @endphp
+                    <div class="mt-3 flex flex-wrap gap-2 text-sm">
+                        <a class="btn-light btn-sm" href="https://wa.me/?text={{ $text }}" target="_blank" rel="noopener">WhatsApp</a>
+                        <a class="btn-light btn-sm" href="mailto:?subject={{ rawurlencode('Sponsor für den '.$event->name) }}&body={{ $text }}">E-Mail</a>
                     </div>
-                </div>
+                </x-card>
+            @endif
 
-            </div>
+            <x-card title="Spenden für {{ $laeufer->vorname }}" :padding="false">
+                <x-slot:actions>
+                    @if ($event->anmeldungOffen() || auth()->user()->can('edit sponsorings'))
+                        <a href="{{ route('sponsorings.create', ['laeufer' => $laeufer->id]) }}" class="btn-primary btn-sm"><x-icon name="plus" class="size-4" /> Spende eintragen</a>
+                    @endif
+                </x-slot:actions>
+                @if ($laeufer->sponsorings->isEmpty())
+                    <div class="p-6"><x-empty message="Noch keine Sponsoren. Teilen Sie den Sponsor-Link oder tragen Sie eine Spende ein." /></div>
+                @else
+                    @include('sponsorings._tabelle', ['sponsorings' => $laeufer->sponsorings, 'zeigeZiel' => false])
+                @endif
+            </x-card>
+
+            @if ($teamSponsorings->isNotEmpty())
+                <x-card title="Spenden für das Team „{{ $laeufer->team->name }}“" subtitle="Diese Spenden werden nach den Runden aller Teammitglieder berechnet." :padding="false">
+                    @include('sponsorings._tabelle', ['sponsorings' => $teamSponsorings, 'zeigeZiel' => false])
+                </x-card>
+            @endif
+        </div>
+
+        <div class="space-y-6">
+            <x-card title="Team">
+                @if ($laeufer->team)
+                    <p class="font-semibold">{{ $laeufer->team->name }}</p>
+                    <p class="text-sm text-slate-500">{{ $laeufer->team->laeufer->count() }} Mitglieder · {{ $laeufer->team->laeufer->sum('runden') }} Runden</p>
+                    <form method="POST" action="{{ route('laeufer.team.leave', $laeufer) }}" class="mt-3" onsubmit="return confirm('Team wirklich verlassen?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn-light btn-sm">Team verlassen</button>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('laeufer.team.join', $laeufer) }}" class="space-y-3" x-data="{ neu: false }">
+                        @csrf
+                        <div x-show="!neu"><x-select name="team_id" label="Team beitreten" :options="$teams->pluck('name', 'id')" placeholder="Team wählen" /></div>
+                        <div x-show="neu" x-cloak><x-input name="teamname" label="Neues Team gründen" /></div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="btn-secondary btn-sm">Speichern</button>
+                            <button type="button" class="btn-light btn-sm" @click="neu = !neu" x-text="neu ? 'bestehendes Team' : 'neues Team'">neues Team</button>
+                        </div>
+                    </form>
+                @endif
+            </x-card>
+
+            <x-card title="Daten bearbeiten">
+                @if ($event->laufVorbei() && ! auth()->user()->can('edit laeufer'))
+                    <dl class="space-y-2 text-sm">
+                        <div><dt class="text-slate-500">Geburtsdatum</dt><dd>{{ $laeufer->geburtsdatum?->format('d.m.Y') ?? '–' }}</dd></div>
+                        <div><dt class="text-slate-500">E-Mail</dt><dd>{{ $laeufer->email ?? '–' }}</dd></div>
+                    </dl>
+                    <p class="hint mt-3">Nach dem Lauf können die Daten nicht mehr geändert werden.</p>
+                @else
+                    <form method="POST" action="{{ route('laeufer.update', $laeufer) }}" class="space-y-4">
+                        @csrf @method('PUT')
+                        @include('laeufer._form')
+                        <button type="submit" class="btn-primary w-full">Speichern</button>
+                    </form>
+                @endif
+            </x-card>
+
+            @can('delete', $laeufer)
+                <x-delete-button :action="route('laeufer.destroy', $laeufer)" label="Läufer abmelden" confirm="Läufer wirklich abmelden?" />
+            @endcan
         </div>
     </div>
-@endsection
-
-@push('js')
-    <script>
-        $(document).ready(function () {
-
-
-            $("input").keyup(function() {
-                checkChanged();
-            });
-            $("select").change(function() {
-                checkChanged();
-            });
-
-            $(":checkbox").change(function() {
-                checkChanged();
-            });
-
-            function checkChanged() {
-
-                if (!$('input').val()) {
-                    $("#btn-save").hide();
-                } else {
-                    $("#btn-save").show();
-                }
-            }
-        });
-
-    </script>
-
-@endpush
+</x-layouts.app>

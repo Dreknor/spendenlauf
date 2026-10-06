@@ -2,12 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
+use App\Support\CurrentEvent;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Foundation\Bus\DispatchesJobs;
-use Illuminate\Foundation\Validation\ValidatesRequests;
-use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Http\RedirectResponse;
 
-class Controller extends BaseController
+abstract class Controller
 {
-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+    use AuthorizesRequests;
+
+    protected function event(): Event
+    {
+        $event = app(CurrentEvent::class)->get();
+
+        abort_if($event === null, 503, 'Es ist noch keine Veranstaltung angelegt.');
+
+        return $event;
+    }
+
+    protected function erfolg(string $meldung, ?string $ziel = null): RedirectResponse
+    {
+        return ($ziel ? redirect($ziel) : back())->with(['type' => 'success', 'status' => $meldung]);
+    }
+
+    protected function fehler(string $meldung, ?string $ziel = null): RedirectResponse
+    {
+        return ($ziel ? redirect($ziel) : back())->withInput()->with(['type' => 'danger', 'status' => $meldung]);
+    }
 }

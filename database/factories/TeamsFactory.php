@@ -1,13 +1,24 @@
 <?php
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+namespace Database\Factories;
 
-use Faker\Generator as Faker;
+use App\Models\Event;
+use App\Models\Teams;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-$factory->define(\App\Model\Teams::class, function (Faker $faker) {
-    return [
-        'name'  => $faker->team,
-        'verwaltet_von' => $faker->randomFloat(2, 1, 20),
-        'open'  => $faker->randomElement([0, 1]),
-    ];
-});
+/** @extends Factory<Teams> */
+class TeamsFactory extends Factory
+{
+    protected $model = Teams::class;
+
+    public function definition(): array
+    {
+        return [
+            'event_id' => Event::factory(),
+            'name' => 'Team '.fake()->unique()->word(),
+            'open' => true,
+            'verwaltet_von' => User::factory(),
+        ];
+    }
+}

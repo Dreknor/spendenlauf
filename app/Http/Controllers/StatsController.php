@@ -2,60 +2,50 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Laeufer;
-use App\Model\Sponsor;
-use App\Model\Sponsoring;
-use App\Model\Teams;
-use App\Repositories\SpendenlaufRepository;
-use Illuminate\Http\Request;
+use App\Services\Statistik;
+use App\Support\CurrentEvent;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Öffentliche Live-Statistik (auch zum Einbetten per iframe). Zeigt nur abgekürzte Namen.
+ */
 class StatsController extends Controller
 {
-    public function stats($full = false){
-        $repository = new SpendenlaufRepository();
+    public function __invoke(?string $full = null)
+    {
+        $event = app(CurrentEvent::class)->get();
+        abort_if($event === null, 404);
 
-        $teams = Cache::remember('teams', 600, function (){
-            return Teams::with(['laeufer', 'laeufer.sponsorings'])->get()->sortByDesc('runden');
+        $daten = Cache::remember("stats.public.{$event->id}", now()->addMinute(), function () use ($event) {
+            $s = Statistik::fuer($event);
+
+            // Nur einfache Arrays cachen (der Cache deserialisiert keine beliebigen Objekte)
+            return [
+                'u' => $s->uebersicht(),
+                'top' => $s->topJeAltersgruppe(3)->map(fn ($g) => ['label' => $g['label'], 'zeilen' => $g['zeilen']->all()])->all(),
+                'teams' => $s->teams()->sortByDesc('runden')->take(10)->values()->all(),
+                'klassen' => $s->klassen()->where('teilnehmer', '>', 0)->sortByDesc('runden_schnitt')->values()->map(fn ($k) => collect($k)->except('zeilen')->all())->all(),
+                'aktualisiert' => now()->toIso8601String(),
+            ];
         });
 
-        $laeufer = Cache::remember('laeufer', 600, function (){
-            return Laeufer::with('sponsorings')->get()->sortByDesc('runden');
-        });
+        $daten = [
+            'u' => $daten['u'],
+            'top' => collect($daten['top']),
+            'teams' => collect($daten['teams']),
+            'klassen' => collect($daten['klassen']),
+            'aktualisiert' => Carbon::parse($daten['aktualisiert']),
+        ];
 
+        $antwort = response()->view('public.stats', $daten + ['event' => $event, 'eingebettet' => $full === 'embed']);
 
-        $spendensumme = Cache::remember('spendensumme', 600, function () use ($repository){
-            return $repository->spendensumme();
-        });
-
-        $sponsoren = Cache::remember('sponsoren', 600, function () use ($repository){
-            return Sponsor::count();
-        });
-
-        $runden_durchschnitt = Cache::remember('runden_durchschnitt', 600, function () use ($repository){
-            if (Sponsoring::count() == 0) {
-                return 0;
+        foreach (['Content-Security-Policy' => 'content_security_policy', 'X-Frame-Options' => 'x_frame_options'] as $header => $key) {
+            if (filled($wert = config("spendenlauf.stats.$key"))) {
+                $antwort->header($header, $wert);
             }
+        }
 
-            return round(Sponsoring::where('rundenBetrag', '>', 0)->sum('rundenBetrag')/Sponsoring::count(),2);
-        });
-
-
-        return response()->view('stats', [
-            'Laeufer'=>  $laeufer->count(),
-            'Teams'=> $teams->count(),
-            'Sponsoren'=> $sponsoren,
-            'Spenden'   => $spendensumme,
-            'gesamtRunden'    => $laeufer->sum('runden'),
-            'aktiveLaeufer' => $laeufer->where('runden', '>', 0)->count(),
-            'besterLaeufer' => $laeufer->first(),
-            'bestesTeam'    => $teams->first()?->name,
-            'laeufers'      => $laeufer,
-            'teams' => $teams,
-            'runden_durchschnitt_sponsoring' => $runden_durchschnitt
-        ])
-            ->header('Content-Security-Policy', config('cors.Content-Security-Policy'))
-            ->header('X-Frame-Options', config('cors.X-Frame-Options'));
+        return $antwort;
     }
-
 }

@@ -70,7 +70,7 @@ class SeedPermissionToPermissionTable extends Migration
         ]);
 
 
-        \App\Model\User::query()->first()->givePermissionTo(Permission::all());
+        \App\Models\User::query()->first()->givePermissionTo(Permission::all());
     }
 
     /**

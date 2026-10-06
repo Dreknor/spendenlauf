@@ -1,166 +1,90 @@
-@extends('layouts.app')
+<x-layouts.app title="Start">
+    @if (! $event)
+        <x-page-header title="Willkommen" />
+        <x-empty message="Es ist noch keine Veranstaltung angelegt.">
+            @can('edit event')
+                <a href="{{ route('events.create') }}" class="btn-primary">Veranstaltung anlegen</a>
+            @endcan
+        </x-empty>
+    @else
+        <x-page-header :title="'Hallo '.auth()->user()->vorname.'!'" :subtitle="$event->name.' am '.$event->datum->translatedFormat('l, d. F Y')">
+            @if ($event->anmeldungOffen())
+                <a href="{{ route('laeufer.create') }}" class="btn-primary"><x-icon name="plus" class="size-4" /> Läufer anmelden</a>
+            @endif
+        </x-page-header>
 
-@section('content')
-
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12 col-sm-12">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="icon-big icon-warning text-center">
-                                <i class="fas fa-hand-holding-usd fa-3x"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-9">
-                            <div class="numbers">
-                                {{number_format($Spenden,2)}} € {{__('Spendenerlös')}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-sm-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="icon-big icon-warning text-center text-info">
-                                <i class="fas fa-running fa-3x"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="numbers text-info">
-                                {{$Laeufer}} {{__('Läufer')}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-sm-6">
-            <div class="card text-warning">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="icon-big icon-warning text-center">
-                                <i class="fas fa-user-friends fa-3x"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="numbers">
-                                {{$Teams}} {{__('Teams')}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-sm-6">
-            <div class="card text-danger">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="icon-big icon-warning text-center">
-                                <i class="fas fa-hand-holding-usd fa-3x"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-9">
-                            <div class="numbers">
-                                {{$Sponsoren}} {{__('Spender')}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-stat label="Spenden bisher" :value="euro($bilanz->bruttoCent)" icon="heart" accent />
+            <x-stat label="Läufer" :value="zahl($anzahlLaeufer)" icon="runner" />
+            <x-stat label="Teams" :value="zahl($anzahlTeams)" icon="team" />
+            <x-stat label="Sponsoren" :value="zahl($anzahlSponsoren)" icon="gift" />
         </div>
 
-    </div>
-    <div class="row justify-content-center">
-        <div class="col">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title">
-                        Willkommen
-                    </h5>
-                </div>
-                @if(!auth()->user()->hasVerifiedEmail())
-                    <div class="card-body bg-warning">
-                        <p>
-                            {{__('Ihre E-Mail-Adresse muss zunächste bestätigt werden. Bitte nutzen Sie den Link aus der versendeten E-Mail.')}}
-                        </p>
-                        <p>
-                            <a href="user/{{auth()->id()}}/sendVerification" class="btn btn-info">{{__('E-Mail erneut zusenden')}}</a>
-                        </p>
+        @if ($vorjahresLaeufer->isNotEmpty())
+            <x-card title="Wieder dabei?" subtitle="Diese Läufer hatten Sie bei einem früheren Spendenlauf angemeldet." class="mt-6">
+                <form method="POST" action="{{ route('laeufer.uebernehmen') }}" class="space-y-3">
+                    @csrf
+                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach ($vorjahresLaeufer as $alt)
+                            <x-checkbox name="laeufer[]" :value="(string) $alt->id" :label="$alt->name" checked />
+                        @endforeach
+                    </div>
+                    <button type="submit" class="btn-secondary">Ausgewählte für {{ $event->jahr() }} anmelden</button>
+                </form>
+            </x-card>
+        @endif
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+            <x-card title="Meine Läufer" class="lg:col-span-2" :padding="false">
+                <x-slot:actions>
+                    <a href="{{ route('laeufer.index') }}" class="btn-light btn-sm">Alle anzeigen</a>
+                </x-slot:actions>
+                @if ($meineLaeufer->isEmpty())
+                    <div class="p-6"><x-empty message="Sie haben noch keine Läufer angemeldet." /></div>
+                @else
+                    <ul class="divide-y divide-slate-100">
+                        @foreach ($meineLaeufer as $l)
+                            <li class="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+                                <span class="inline-flex size-10 items-center justify-center rounded-full bg-esz-50 font-bold text-esz-700">{{ $l->startnummer }}</span>
+                                <div class="min-w-0 flex-1">
+                                    <a href="{{ route('laeufer.edit', $l) }}" class="font-semibold">{{ $l->name }}</a>
+                                    <p class="text-xs text-slate-500">
+                                        {{ $l->kategorie?->label() }}@if ($l->schulklasse) · Klasse {{ $l->schulklasse->name }}@endif
+                                        @if ($l->team) · Team {{ $l->team->name }}@endif
+                                    </p>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <p class="font-semibold tabular-nums">{{ euro($bilanz->laeuferSpende($l->id)) }}</p>
+                                    <p class="text-xs text-slate-500">{{ $l->runden }} Runden</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
+
+            <x-card title="So funktioniert's">
+                <ol class="space-y-4 text-sm">
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-navy-800 text-xs font-bold text-white">1</span>
+                        <span><a href="{{ route('laeufer.create') }}">Läufer anmelden</a> – sich selbst oder die eigenen Kinder.</span></li>
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-navy-800 text-xs font-bold text-white">2</span>
+                        <span>Optional ein <a href="{{ route('teams.index') }}">Team</a> gründen oder einem offenen Team beitreten.</span></li>
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-navy-800 text-xs font-bold text-white">3</span>
+                        <span>Den persönlichen <strong>Sponsor-Link</strong> (auf der Seite des Läufers) an Familie, Freunde und Firmen schicken – oder Sponsoren selbst <a href="{{ route('sponsoren.create') }}">eintragen</a>.</span></li>
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-esz-600 text-xs font-bold text-white">4</span>
+                        <span>Am {{ $event->datum->format('d.m.') }} laufen! Die Sponsoren erhalten danach eine Mail mit ihrem Betrag.</span></li>
+                </ol>
+                @if ($event->hatSozialeAbgabe() || $event->hatKlassenkasse())
+                    <div class="mt-5 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                        @if ($event->hatSozialeAbgabe())
+                            <p>{{ prozent($event->soziale_abgabe_prozent) }} % aller Spenden gehen an {{ $event->soziale_abgabe_empfaenger }}.</p>
+                        @endif
+                        @if ($event->hatKlassenkasse())
+                            <p>{{ prozent($event->klassenkasse_prozent) }} % der von Schülerinnen und Schülern erlaufenen Spenden gehen in die jeweilige Klassenkasse.</p>
+                        @endif
                     </div>
                 @endif
-                <div class="card-body">
-                    <p>
-                        Schön, dass Sie die Projekte in und für Radebeul unterstützen. Sie können sich im Menüpunkt "Projekte" eine Übersicht über die unterstützten Projekte verschaffen.
-                    </p>
-                    <p>
-                        Bitte gehen Sie wie folgt vor:
-                    </p>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 col-sm-12">
-                            <b>
-                                Schritt 1:
-                            </b>
-                        </div>
-                        <div class="col-md-9 col-sm-12">
-                            <a href="{{url('/laeufer')}}" class="btn  btn-block btn-outline-info">
-                                <i class="fas fa-running"></i>
-                                {{__('Läufer*In anmelden')}}
-                            </a>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 col-sm-12">
-                            <b>
-                                Schritt 2 (optional):
-                            </b>
-                        </div>
-                        <div class="col-md-9 col-sm-12">
-                            <a href="{{url('/teams')}}" class="btn btn-block btn-outline-info">
-                                <i class="fas fa-user-friends"></i>
-                                    {{__('Team verwalten')}}
-                            </a>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 col-sm-12">
-                            <b>
-                                Schritt 3:
-                            </b>
-                        </div>
-                        <div class="col-md-9 col-sm-12">
-                            <a href="{{url('/sponsoren')}}" class="btn btn-block  btn-outline-info">
-                                <i class="fas fa-hand-holding-usd"></i>
-                                {{__('Spender*In erfassen')}}
-                            </a>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 col-sm-12">
-                            <b>
-                                Schritt 4:
-                            </b>
-                        </div>
-                        <div class="col-md-9 col-sm-12">
-                                <a href="{{url('/sponsorings')}}" class="btn btn-block  btn-outline-info">
-                                    <i class="fas fa-euro-sign"></i>
-                                    {{__('Spenden erstellen')}}
-                                </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </x-card>
         </div>
-
-    </div>
-</div>
-@endsection
+    @endif
+</x-layouts.app>

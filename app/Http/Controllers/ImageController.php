@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ImageController extends Controller
 {
-    public function getImage(Media $media_id)
+    public function __invoke(Media $media)
     {
-        $response = new BinaryFileResponse($media_id->getPath());
-        $response->headers->set('Content-Disposition', 'inline; filename="'.$media_id->file_name.'"');
+        abort_unless(str_starts_with((string) $media->mime_type, 'image/'), 404);
 
-        return $response;
+        return response()->file($media->getPath(), [
+            'Content-Disposition' => 'inline; filename="'.$media->file_name.'"',
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
     }
 }

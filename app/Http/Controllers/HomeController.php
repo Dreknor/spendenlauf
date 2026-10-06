@@ -2,35 +2,46 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Sponsoring;
-use App\Repositories\SpendenlaufRepository;
+use App\Models\Laeufer;
+use App\Models\Teams;
+use App\Services\SpendenRechner;
+use App\Support\CurrentEvent;
+use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function __invoke(Request $request)
     {
-        $this->middleware('auth');
-    }
+        $event = app(CurrentEvent::class)->get();
+        $user = $request->user();
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function index()
-    {
-        $repository = new SpendenlaufRepository();
+        if (! $event) {
+            return view('home', ['event' => null]);
+        }
+
+        $bilanz = SpendenRechner::fuer($event)->bilanz();
+
+        $meineLaeufer = $user->laeufer()->with(['team', 'schulklasse'])->orderBy('nachname')->get();
+
+        $vorjahresLaeufer = collect();
+        if ($event->anmeldungOffen()) {
+            $vorjahresLaeufer = Laeufer::withoutGlobalScope('event')
+                ->where('verwaltet_von', $user->id)
+                ->where('event_id', '!=', $event->id)
+                ->latest('event_id')
+                ->get()
+                ->unique(fn ($l) => mb_strtolower($l->vorname.'|'.$l->nachname))
+                ->reject(fn ($l) => $meineLaeufer->contains(fn ($m) => mb_strtolower($m->vorname.'|'.$m->nachname) === mb_strtolower($l->vorname.'|'.$l->nachname)));
+        }
 
         return view('home', [
-            'Laeufer'=>  $repository->anzahlLauefer(),
-            'Teams'=> $repository->anzahlTeams(),
-            'Sponsoren'=> $repository->anzahlSponsoren(),
-            'Spenden'   => $repository->spendensumme('spende'),
+            'event' => $event,
+            'bilanz' => $bilanz,
+            'anzahlLaeufer' => count($bilanz->laeufer),
+            'anzahlTeams' => Teams::count(),
+            'anzahlSponsoren' => count($bilanz->sponsoren),
+            'meineLaeufer' => $meineLaeufer,
+            'vorjahresLaeufer' => $vorjahresLaeufer,
         ]);
     }
 }

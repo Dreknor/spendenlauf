@@ -3,39 +3,44 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class PublicSponsorRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
-        return [
-            'anrede' => 'required|in:Herr,Frau',
-            'vorname' => 'required|string|max:255',
-            'nachname' => 'required|string|max:255',
-            'firmenname' => 'nullable|string|max:255',
-            'email' => 'required|email|max:255',
-            'strasse' => 'required|string|max:255',
-            'plz' => 'required|string|max:10',
-            'ort' => 'required|string|max:255',
-            'telefon' => 'nullable|string|max:255',
-            'maxBetrag' => 'nullable|numeric|min:0.5',
-            'rundenBetrag' => 'nullable|numeric|min:0.5',
-            'festBetrag' => 'nullable|numeric|min:0.5',
-        ];
+        $istFirma = $this->input('anrede') === 'Firma';
+
+        return array_merge([
+            'anrede' => ['required', Rule::in(['Herr', 'Frau', 'Firma'])],
+            'vorname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
+            'nachname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
+            'firmenname' => ['nullable', Rule::requiredIf($istFirma), 'string', 'max:190'],
+            'email' => ['required', 'email', 'max:190'],
+            'strasse' => ['required', 'string', 'max:190'],
+            'plz' => ['required', 'string', 'max:10'],
+            'ort' => ['required', 'string', 'max:190'],
+            'telefon' => ['nullable', 'string', 'max:50'],
+            'datenschutz' => ['accepted'],
+        ], SponsoringRequest::betragsRegeln());
     }
 
-    public function messages()
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(fn (Validator $v) => SponsoringRequest::pruefeBetrag($v, $this->all()));
+    }
+
+    public function attributes(): array
     {
         return [
-            'required' => 'Das Feld :attribute ist erforderlich.',
-            'email' => 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
-            'numeric' => 'Der Spendenbetrag muss eine Zahl sein.',
-            'min' => 'Der Mindestspendenbetrag beträgt 0,01 €.',
+            'festBetrag' => 'Festbetrag', 'rundenBetrag' => 'Betrag je Runde', 'maxBetrag' => 'Maximalbetrag',
+            'firmenname' => 'Firmenname', 'plz' => 'PLZ', 'strasse' => 'Straße', 'datenschutz' => 'Datenschutzerklärung',
         ];
     }
 }

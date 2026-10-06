@@ -1,171 +1,58 @@
-@extends('layouts.app')
+<x-layouts.app :title="'Team '.$team->name">
+    <x-page-header :title="'Team „'.$team->name.'“'" :subtitle="'Verantwortlich: '.($team->besitzer?->name ?? '–')">
+        <a href="{{ route('sponsorings.create', ['team' => $team->id]) }}" class="btn-primary"><x-icon name="plus" class="size-4" /> Team-Spende eintragen</a>
+    </x-page-header>
 
-@section('content')
-
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title">
-                {{__('Team bearbeiten')}}
-            </h5>
-        </div>
-
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6 col-sm-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <p class="card-title">
-                                Team-Daten
-                            </p>
-                        </div>
-                        <div class="card-body">
-                            <form action="{{url("/teams/$team->id")}}" method="post" class="form form-horizontal">
-                                @csrf
-                                @method('put')
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="alert alert-info">
-                                            <b>Hinweis: </b> Teams, die öffentlich sind, können von anderen Läufern gesehen und diesen beigetreten werden. Bei nicht öffentlichen Teams muss der Ersteller des Teams auch alle Läufer anmelden um diese in das Team aufnehmen zu können.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12 col-sm-12">
-                                        <div class="form-group">
-                                            <label>{{__('Name des Teams')}}</label>
-                                            <input type="text" class="form-control border-input"  name="name" value="{{old('name', $team->name)}}" required>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12 col-sm-12">
-                                        <div class="form-group">
-                                            <label>{{__('offenes Team - jeder kann beitreten?')}}</label>
-                                            <select type="text" class="custom-select"  name="open" required>
-                                                <option value="1" @if($team->open ) selected @endif>
-                                                    {{__('öffentlich')}}
-                                                </option>
-                                                <option value="0" @if(!$team->open ) selected @endif>
-                                                    {{__('nicht öffentlich')}}
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-                                            {{__('Änderungen speichern')}}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                </div>
-                <div class="col-md-6 col-sm-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <p class="card-title">
-                                {{__('Läufer')}}
-                            </p>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-group">
-                                @foreach($team->laeufer as $laeufer)
-                                    <li class="list-group-item">
-                                        @if(auth()->user()->can('edit laeufer') or $laeufer->besitzer->id == auth()->user()->id)
-                                            <a href="{{url("laeufer/$laeufer->id")}}" class="card-link">
-                                                {{$laeufer->name}}
-                                            </a>
-                                        @else
-                                            {{$laeufer->name}}
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
-
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <p class="card-title">
-                                Spenden
-                            </p>
-                        </div>
-                        <div class="card-body">
-                            <p class="small text-muted">
-                                Die Beträge sind in der Reihenfolge Festbetrag, Rundenbetrag und maximaler Betrag angegeben.
-                            </p>
-                            <ul class="list-group">
-                                @foreach($team->sponsorings as $sponsoring)
-                                    @include('elements.SponsoringItem')
-                                @endforeach
-                            </ul>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card-footer">
-            <div class="row">
-                <div class="col-9">
-                    <a href="{{url("/teams")}}" class="btn btn-secondary btn-block">
-                        {{__('Zurück')}}
-                    </a>
-                </div>
-                <div class="col-3">
-                    @if($team->laeufer->count() == 0 and $team->sponsorings->count() == 0)
-                        <form action="{{url("/teams/$team->id")}}" method="post" class="form form-horizontal">
-                            @csrf
-                            @method('delete')
-                            <button type="submit" class="btn btn-danger">
-                                {{__('Team löschen')}}
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
-
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <x-stat label="Team-Spenden" :value="euro($bilanz->teams[$team->id]['spende'] ?? 0)" accent />
+        <x-stat label="Mitglieder" :value="$team->laeufer->count()" />
+        <x-stat label="Runden" :value="zahl($team->laeufer->sum('runden'))" />
+        <x-stat label="Einzelspenden der Mitglieder" :value="euro($team->laeufer->sum(fn ($l) => $bilanz->laeufer[$l->id]['einzel'] ?? 0))" />
     </div>
 
-@endsection
-
-@push('css')
-
-
-@endpush
-
-@push('js')
-    <script>
-        $(document).ready(function () {
-
-            $("input").keyup(function() {
-                checkChanged();
-            });
-            $("select").change(function() {
-                checkChanged();
-            });
-
-            $(":checkbox").change(function() {
-                checkChanged();
-            });
-
-            function checkChanged() {
-
-                if (!$('input').val()) {
-                    $("#submitBtn").hide();
-                } else {
-                    $("#submitBtn").show();
-                }
-            }
-        });
-
-    </script>
-@endpush
+    <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="space-y-6 lg:col-span-2">
+            <x-card title="Mitglieder" :padding="false">
+                @if ($team->laeufer->isEmpty())
+                    <div class="p-6"><x-empty message="Noch keine Läufer im Team. Läufer können auf ihrer Seite einem Team beitreten." /></div>
+                @else
+                    <table class="table">
+                        <thead><tr><th>Nr.</th><th>Name</th><th>Klasse</th><th class="num">Runden</th><th class="num">Anteil Team-Spende</th></tr></thead>
+                        <tbody>
+                        @foreach ($team->laeufer as $l)
+                            <tr>
+                                <td class="tabular-nums">{{ $l->startnummer }}</td>
+                                <td>@can('view', $l)<a href="{{ route('laeufer.edit', $l) }}">{{ $l->name }}</a>@else{{ $l->name }}@endcan</td>
+                                <td>{{ $l->schulklasse?->name ?? '–' }}</td>
+                                <td class="num">{{ $l->runden }}</td>
+                                <td class="num">{{ euro($bilanz->laeufer[$l->id]['teamanteil'] ?? 0) }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </x-card>
+            <x-card title="Team-Spenden" :padding="false">
+                @if ($team->sponsorings->isEmpty())
+                    <div class="p-6"><x-empty message="Noch keine Team-Spenden." /></div>
+                @else
+                    @include('sponsorings._tabelle', ['sponsorings' => $team->sponsorings, 'zeigeZiel' => false])
+                @endif
+            </x-card>
+        </div>
+        <div class="space-y-6">
+            <x-card title="Einstellungen">
+                <form method="POST" action="{{ route('teams.update', $team) }}" class="space-y-4">
+                    @csrf @method('PUT')
+                    <x-input name="name" label="Teamname" :value="$team->name" required />
+                    <input type="hidden" name="open" value="0">
+                    <x-checkbox name="open" label="Offenes Team" :checked="$team->open" />
+                    <button type="submit" class="btn-primary w-full">Speichern</button>
+                </form>
+            </x-card>
+            @if ($team->laeufer->isEmpty() && $team->sponsorings->isEmpty())
+                <x-delete-button :action="route('teams.destroy', $team)" label="Team löschen" />
+            @endif
+        </div>
+    </div>
+</x-layouts.app>

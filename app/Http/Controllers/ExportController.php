@@ -2,100 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\LaeuferExport;
-use App\Exports\ProjectExport;
-use App\Exports\SponsorExport;
-use App\Model\Laeufer;
-use App\Model\Projects;
-use App\Model\Sponsor;
-use App\Model\Sponsoring;
-use App\Model\Teams;
-use Illuminate\Http\Request;
+use App\Exports\TabellenExport;
+use App\Models\Laeufer;
+use App\Models\Sponsor;
+use App\Services\SpendenRechner;
+use App\Services\Statistik;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExportController extends Controller
 {
     public function laeufer()
     {
-        if (! auth()->user()->can('import export')) {
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'    => __('Berechtigung fehlt'),
-            ]);
-        }
+        $event = $this->event();
+        $bilanz = SpendenRechner::fuer($event)->bilanz();
 
-        return Excel::download(new LaeuferExport, 'laeufer.xlsx');
+        $zeilen = Laeufer::with(['schulklasse', 'team', 'besitzer'])->orderBy('startnummer')->get()->map(fn (Laeufer $l) => [
+            $l->startnummer, $l->nachname, $l->vorname, $l->geburtsdatum?->format('d.m.Y'), $l->geschlecht, $l->kategorie?->label(),
+            $l->schulklasse?->name, $l->team?->name, $l->runden, round($bilanz->laeuferSpende($l->id) / 100, 2),
+            $l->besitzer?->name, $l->besitzer?->email,
+        ])->all();
+
+        return Excel::download(new TabellenExport('Läufer', [
+            'Startnummer', 'Nachname', 'Vorname', 'Geburtsdatum', 'Geschlecht', 'Kategorie', 'Klasse', 'Team', 'Runden', 'Spenden (€)', 'Angemeldet von', 'E-Mail',
+        ], $zeilen), 'laeufer-'.$event->jahr().'.xlsx');
     }
 
     public function sponsoren()
     {
-        if (! auth()->user()->can('import export')) {
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'    => __('Berechtigung fehlt'),
-            ]);
-        }
+        $event = $this->event();
+        $bilanz = SpendenRechner::fuer($event)->bilanz();
 
-        return Excel::download(new SponsorExport(), 'sponsoren.xlsx');
+        $zeilen = Sponsor::whereIn('id', array_keys($bilanz->sponsoren))->orderBy('nachname')->get()->map(fn (Sponsor $s) => [
+            $s->id, $s->anrede, $s->firmenname, $s->vorname, $s->nachname, $s->strasse, $s->plz, $s->ort, $s->email, $s->telefon,
+            $bilanz->sponsoren[$s->id]['sponsorings'], round($bilanz->sponsorSoll($s->id) / 100, 2), round($bilanz->sponsorIst($s->id) / 100, 2),
+            $event->verwendungszweck($s),
+        ])->all();
+
+        return Excel::download(new TabellenExport('Sponsoren', [
+            'Nr.', 'Anrede', 'Firma', 'Vorname', 'Nachname', 'Straße', 'PLZ', 'Ort', 'E-Mail', 'Telefon', 'Sponsorings', 'Soll (€)', 'Bezahlt (€)', 'Verwendungszweck',
+        ], $zeilen), 'sponsoren-'.$event->jahr().'.xlsx');
     }
 
-    public function projects()
+    /** Verteilung auf Projekte, soziale Abgabe und Klassenkassen. */
+    public function projekte()
     {
-        $projects = Projects::all();
-        $projectArray = [];
-        $Spende = 0;
+        $event = $this->event();
+        $s = Statistik::fuer($event);
 
-        foreach ($projects as $project) {
-            $projectArray[$project->id] = [
-                'name'  => $project->name,
-                'spendensumme'  => 0,
-            ];
+        $zeilen = $s->projekte()->map(fn ($p) => [$p['label'], round($p['betrag'] / 100, 2)])->all();
+        $zeilen[] = ['Summe', round($s->bilanz()->bruttoCent / 100, 2)];
+        $zeilen[] = [];
+        $zeilen[] = ['Klassenkassen im Detail', ''];
+        foreach ($s->klassen() as $k) {
+            $zeilen[] = ['Klasse '.$k['name'], round($k['kasse'] / 100, 2)];
         }
 
-        $laeufers = Laeufer::all();
-        $laeufers->load('sponsorings');
-        $teams = Teams::with(['laeufer', 'sponsorings', 'sponsorings.sponsorable', 'sponsorings.projects'])->get();
-
-        $Test = [];
-
-        foreach ($teams as $team) {
-            $runden = $team->laeufer->sum('runden');
-
-            foreach ($team->sponsorings as $sponsoring) {
-                $Spende = $sponsoring->spende($runden);
-
-                $spendenaufteilung = 0;
-
-                foreach ($sponsoring->projects as $project) {
-                    $spendenaufteilung += floor(($Spende * 100) / ($sponsoring->projects->count())) / 100;
-                    $projectArray[$project->id]['spendensumme'] += floor(($Spende * 100) / ($sponsoring->projects->count())) / 100;
-                }
-                if ($spendenaufteilung != $Spende) {
-                    $Rest = $Spende - $spendenaufteilung;
-                    $projectArray[$sponsoring->projects->first()->id]['spendensumme'] += $Rest;
-                }
-            }
-        }
-
-        foreach ($laeufers as $laeufer) {
-            $runden = $laeufer->runden;
-
-            foreach ($laeufer->sponsorings as $sponsoring) {
-                $Spende = $sponsoring->spende($runden);
-
-                $spendenaufteilung = 0;
-
-                foreach ($sponsoring->projects as $project) {
-                    $spendenaufteilung += floor(($Spende * 100) / ($sponsoring->projects->count())) / 100;
-                    $projectArray[$project->id]['spendensumme'] += floor(($Spende * 100) / ($sponsoring->projects->count())) / 100;
-                }
-                if ($spendenaufteilung != $Spende) {
-                    $Rest = $Spende - $spendenaufteilung;
-                    $projectArray[$sponsoring->projects->first()->id]['spendensumme'] += $Rest;
-                }
-            }
-        }
-
-        return Excel::download(new ProjectExport($projectArray), 'Projektspenden.xlsx');
+        return Excel::download(new TabellenExport('Verteilung', ['Empfänger', 'Betrag (€)'], $zeilen), 'verteilung-'.$event->jahr().'.xlsx');
     }
 }

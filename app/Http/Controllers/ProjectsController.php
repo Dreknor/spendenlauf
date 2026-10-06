@@ -2,143 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateProjectRequest;
-use App\Model\Projects;
-use Illuminate\Http\Request;
+use App\Http\Requests\ProjectRequest;
+use App\Models\Projects;
+use App\Support\CurrentEvent;
 
 class ProjectsController extends Controller
 {
-    public function __construct()
-    {
-    }
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        return view('projects.index', [
-            'projects'  => Projects::all()->load('sponsorings'),
+        $event = app(CurrentEvent::class)->get();
+
+        $projekte = $event
+            ? $event->projects()->orderBy('name')->get()
+            : Projects::orderBy('name')->get();
+
+        $view = auth()->check() ? 'projects.index' : 'public.projekte';
+
+        return view($view, [
+            'projekte' => $projekte,
+            'weitere' => auth()->user()?->can('edit projekt')
+                ? Projects::whereNotIn('id', $projekte->pluck('id'))->orderBy('name')->get()
+                : collect(),
+            'event' => $event,
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        if (! auth()->user()->can('edit projekt')) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
-        }
-
-        return view('projects.create');
+        return view('projects.form', ['project' => new Projects]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(CreateProjectRequest $request)
+    public function store(ProjectRequest $request)
     {
-        if (! auth()->user()->can('edit projekt')) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
+        $project = Projects::create($request->safe()->only(['name', 'description']));
+        $this->bildSpeichern($request, $project);
+
+        if ($request->boolean('im_aktuellen_lauf') && ($event = app(CurrentEvent::class)->get())) {
+            $event->projects()->syncWithoutDetaching([$project->id]);
         }
 
-        $project = new Projects($request->all());
-        $project->save();
-        if ($request->hasFile('files')) {
-            $project->addMediaFromRequest('files')->toMediaCollection('images');
-        }
-
-        return redirect(url('projects'))->with([
-            'type'   => 'success',
-            'Meldung'    => __('Projekt erstellt'),
-        ]);
+        return $this->erfolg('Projekt erstellt.', route('projects.index'));
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Model\Projects  $projects
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Projects $projects)
-    {
-        return $this->index();
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Model\Projects  $projects
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Projects $project)
     {
-        if (! auth()->user()->can('edit projekt')) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
-        }
-
-        return view('projects.edit', [
-            'project'   => $project,
-        ]);
+        return view('projects.form', ['project' => $project]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Model\Projects  $projects
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Projects $project)
+    public function update(ProjectRequest $request, Projects $project)
     {
-        if (! auth()->user()->can('edit projekt')) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
+        $project->update($request->safe()->only(['name', 'description']));
+        $this->bildSpeichern($request, $project);
+
+        if ($event = app(CurrentEvent::class)->get()) {
+            $request->boolean('im_aktuellen_lauf')
+                ? $event->projects()->syncWithoutDetaching([$project->id])
+                : $event->projects()->detach($project->id);
         }
 
-        $project->update([
-            'name'  => $request->name,
-            'description'   => $request->description,
-        ]);
-
-        if ($request->hasFile('files')) {
-            $project->clearMediaCollection('images');
-            $project->addMediaFromRequest('files')->toMediaCollection('images');
-        }
-
-        return redirect(url('projects'))->with([
-            'type'  => 'success',
-            'Meldung'   => __('Projekt bearbeitet'),
-        ]);
+        return $this->erfolg('Projekt gespeichert.', route('projects.index'));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Model\Projects  $projects
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Projects $projects)
+    public function destroy(Projects $project)
     {
-        return redirect()->back();
+        if ($project->sponsorings()->exists()) {
+            return $this->fehler('Das Projekt wurde bereits gesponsert und kann nicht gelöscht werden. Entfernen Sie es stattdessen aus dem aktuellen Lauf.');
+        }
+
+        $project->events()->detach();
+        $project->delete();
+
+        return $this->erfolg('Projekt gelöscht.', route('projects.index'));
+    }
+
+    private function bildSpeichern(ProjectRequest $request, Projects $project): void
+    {
+        if ($request->hasFile('bild')) {
+            $project->addMediaFromRequest('bild')->toMediaCollection('images');
+        }
     }
 }

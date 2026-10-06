@@ -1,72 +1,68 @@
-<p align="center"><img src="https://res.cloudinary.com/dtfbvvkyp/image/upload/v1566331377/laravel-logolockup-cmyk-red.svg" width="400"></p>
+# Radebeuler Spendenlauf
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+Verwaltung des Spendenlaufs des Evangelischen Schulzentrums Radebeul: Anmeldung von Läufern, Sponsoren und Spendenzusagen, Rundenerfassung am Lauftag, Abrechnung mit den Sponsoren sowie Statistiken und Klassenauswertung.
 
-## About Laravel
+**Technik:** Laravel 13 (PHP ≥ 8.3), Blade + Alpine.js, Tailwind CSS 4 (Vite), Chart.js, MariaDB/MySQL, Laravel Fortify (Login/Registrierung), spatie/laravel-permission, DomPDF, Laravel Excel.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Einrichtung (lokal)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```bash
+composer install
+npm install
+cp .env.example .env   # Datenbank und Mail eintragen
+php artisan key:generate
+php artisan migrate
+php artisan db:seed     # nur lokal: Demo-Lauf mit Testdaten, Login demo-admin@example.org / password
+npm run build           # oder: npm run dev
+php artisan test
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Für den automatischen Runden-Import am Lauftag muss der Scheduler laufen (Cronjob):
 
-## Learning Laravel
+```
+* * * * * cd /pfad/zum/projekt && php artisan schedule:run >> /dev/null 2>&1
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, Frontend-Build, Migrationen, Caches).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Ablauf eines Spendenlaufs
 
-## Laravel Sponsors
+1. **Vorbereiten** – *Verwaltung → Veranstaltungen → Neuen Lauf vorbereiten*. Einstellungen werden vom letzten Lauf übernommen, Klassen werden auf Wunsch hochgestuft (5a → 7a bei zwei Jahren Abstand). Projekte auswählen, Bankdaten, PayPal.me-Name, Prozentsätze für soziale Abgabe und Klassenkasse prüfen und den Lauf **aktivieren**.
+2. **Anmeldung** – Eltern registrieren sich, melden sich und ihre Kinder an (Kategorie, bei Schülern die Klasse). Läufer vom letzten Lauf können mit einem Klick übernommen werden. Jeder Läufer hat einen persönlichen **Sponsor-Link**, über den Sponsoren selbst Spenden zusagen.
+3. **Lauftag** –
+   - *Schnellerfassung*: Läufer, Startnummer, Sponsoren, Spenden und Barzahlungen in einem Schritt.
+   - *Runden eingeben*: manuelle Eingabe/Korrektur per Startnummer.
+   - *Runden importieren*: automatisch alle 5 Minuten von der Ergebnisseite der Zeitmessung (Import-URL am Event) oder per CSV/Excel-Upload. Manuell eingegebene Runden werden dabei nicht überschrieben.
+   - *Startnummern*: Pool der vorgedruckten Nummern.
+4. **Abrechnung** – Zahlungsaufforderungen per Mail (Aufstellung, Bankverbindung, Verwendungszweck mit Sponsor-Nr., PayPal.me-Link, Link zur persönlichen Sponsor-Seite), Zahlungseingänge erfassen, Erinnerungen an offene Posten, vereinfachter Spendennachweis (≤ 300 €) als PDF, Export der Spenden über 300 € für Zuwendungsbestätigungen.
+5. **Auswertung** – Statistiken nach Läufern, Teams, Altersgruppen, Geschlecht, Kategorie, Klassen/Stufen, Sponsoren, Verteilung und Jahresvergleich; Excel- und PDF-Export; Klassenauswertung (PDF je Klasse für die Klassenleitungen); öffentliche Live-Statistik unter `/stats` (einbettbar, `/stats/embed` ohne Kopf/Fuß).
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+## Berechnung
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- [UserInsights](https://userinsights.com)
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
-- [User10](https://user10.com)
-- [Soumettre.fr](https://soumettre.fr/)
-- [CodeBrisk](https://codebrisk.com)
-- [1Forge](https://1forge.com)
-- [TECPRESSO](https://tecpresso.co.jp/)
-- [Runtime Converter](http://runtimeconverter.com/)
-- [WebL'Agence](https://weblagence.com/)
-- [Invoice Ninja](https://www.invoiceninja.com)
-- [iMi digital](https://www.imi-digital.de/)
-- [Earthlink](https://www.earthlink.ro/)
-- [Steadfast Collective](https://steadfastcollective.com/)
-- [We Are The Robots Inc.](https://watr.mx/)
-- [Understand.io](https://www.understand.io/)
-- [Abdel Elrafa](https://abdelelrafa.com)
-- [Hyper Host](https://hyper.host)
+Alle Beträge werden zentral in `app/Services/SpendenRechner.php` berechnet (intern in Cent):
 
-## Contributing
+- Spende = Festbetrag + Runden × Betrag je Runde, gedeckelt durch den Höchstbetrag (falls angegeben). Bei Team-Spenden zählen die Runden aller Teammitglieder.
+- **Soziale Abgabe** und **Klassenkasse** werden beide vom Bruttobetrag berechnet. Die Klassenkasse erhält den eingestellten Anteil der Spenden für Schüler-Läufer; Team-Spenden werden dafür nach Runden auf die Mitglieder verteilt.
+- Der Rest wird gleichmäßig auf die gewählten Projekte verteilt (ohne Auswahl: alle Projekte des Laufs). Rundungsreste werden so verteilt, dass alle Summen centgenau aufgehen.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Rechte
 
-## Security Vulnerabilities
+| Recht | Bedeutung |
+|---|---|
+| `edit user`, `edit permission` | Benutzer verwalten, Rechte vergeben |
+| `edit event` | Veranstaltungen, Klassen, Einstellungen |
+| `edit projekt` | Projekte verwalten |
+| `edit laeufer`, `edit teams`, `edit sponsoren`, `edit sponsorings` | alle Datensätze sehen und bearbeiten (sonst nur eigene) |
+| `edit startnummer` | Startnummern-Pool, Startnummern ändern |
+| `schnellerfassung` | Anmeldetisch am Lauftag |
+| `edit runden` | Runden manuell eingeben |
+| `import export` | Runden-Import, Excel-Exporte |
+| `show auswertung` | Statistiken und Klassenauswertung |
+| `manage abrechnung` | Zahlungen, Zahlungsaufforderungen, Nachweise |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Wichtige Dateien
 
-## License
-
-The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `app/Services/SpendenRechner.php`, `Statistik.php`, `SponsorAbrechnung.php` – Berechnungen
+- `app/Actions/ImportRunden.php`, `Startnummernvergabe.php`, `LaeuferUebernehmen.php`
+- `app/Models/Concerns/BelongsToEvent.php` – beschränkt Läufer, Teams, Spenden usw. auf die aktuelle Veranstaltung
+- `resources/css/app.css` – Tailwind-Theme mit den ESZ-Farben (`esz-*` = #cc224d, `navy-*` = #002561)

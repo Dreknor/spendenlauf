@@ -1,108 +1,21 @@
-@extends('layouts.layout')
-
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    {{ __('Anmeldung') }}
-                    <div class="d-inline pull-right">
-                        <a href="{{url('/login')}}" class="btn btn-sm btn-info">zum Login</a>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <form method="POST" action="{{ route('register') }}">
-                        @csrf
-                        <div class="form-group row">
-                            <label for="vorname" class="col-md-4 col-form-label text-md-right">{{ __('Vorname') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="vorname" type="text" class="form-control @error('vorname') is-invalid @enderror" name="vorname" value="{{ old('vorname') }}" required autocomplete="vorname" autofocus>
-
-                                @error('vorname')
-                                <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="nachname" class="col-md-4 col-form-label text-md-right">{{ __('Nachname') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="nachname" type="text" class="form-control @error('nachname') is-invalid @enderror" name="nachname" value="{{ old('nachname') }}" required autocomplete="nachname" autofocus>
-
-                                @error('nachname')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-
-                        <div class="form-group row">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email">
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-right">{{ __('Confirm Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="captcha" class="col-md-4 col-form-label text-md-right">
-                                {!! captcha_img('flat') !!}
-                            </label>
-                            <div class="col-md-6">
-                                <input type="text" name="captcha" class="form-control @error('captcha') is-invalid @enderror" placeholder="Sicherheitscode eingeben" required>
-                                @error('captcha')
-                                <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                        </div>
-
-
-                        <div class="form-group row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<x-layouts.guest title="Registrieren">
+    <p class="mb-4 text-sm text-slate-600">
+        Mit einem Konto können Sie sich selbst und Ihre Kinder für den Spendenlauf anmelden und Sponsoren verwalten.
+    </p>
+    <form method="POST" action="{{ route('register') }}" class="space-y-4">
+        @csrf
+        <x-honeypot />
+        <div class="grid gap-4 sm:grid-cols-2">
+            <x-input name="vorname" label="Vorname" required autofocus autocomplete="given-name" />
+            <x-input name="nachname" label="Nachname" required autocomplete="family-name" />
         </div>
-    </div>
-</div>
-@endsection
+        <x-input name="email" type="email" label="E-Mail-Adresse" required autocomplete="email" />
+        <x-input name="password" type="password" label="Passwort" required autocomplete="new-password" hint="Mindestens 8 Zeichen." />
+        <x-input name="password_confirmation" type="password" label="Passwort wiederholen" required autocomplete="new-password" />
+        <x-checkbox name="datenschutz">
+            <x-slot:label>Ich habe die <a href="{{ config('spendenlauf.datenschutz_link') }}" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin einverstanden.</x-slot:label>
+        </x-checkbox>
+        <button type="submit" class="btn-primary w-full">Konto anlegen</button>
+    </form>
+    <p class="mt-6 text-sm"><a href="{{ route('login') }}">Ich habe bereits ein Konto</a></p>
+</x-layouts.guest>

@@ -1,96 +1,34 @@
-@extends('layouts.app')
-
-@section('content')
-    <div class="container-fluid">
-        <div class="card">
-            <div class="card-header bg-info">
-                <div class="row">
-                    <div class="col-md-8 col-sm-12">
-                        <h5 class="card-title text-white">
-                            {{__('Team-Übersicht')}}
-                        </h5>
-                    </div>
-                    <div class="col-md-4 col-sm-12 content-center">
-                        <a href="{{url('teams/create')}}" class="btn btn-success">
-                            {{__('Team erstellen')}}
-                        </a>
-                    </div>
-                </div>
-
-            </div>
-            <div class="card-body">
-                @if(count($teams)<1)
-                    <p>
-                        {{__('Sie haben bisher keine Teams erstellt.')}}
-                    </p>
-                @else
-                    <div class="table-responsive-md  ">
-                        <table class="table table-striped">
-                            <thead>
-                            <th>{{__('Teamname')}}</th>
-                            <th>{{__('Anzahl Läufer')}}</th>
-                            <th>{{__('Spenden')}}</th>
-                            <th>{{__('Runden')}}</th>
-                            <th>{{__('Öffentlich?')}}</th>
-                            @can('edit teams')
-                                <th>{{__('Ersteller')}}</th>
+<x-layouts.app title="Teams">
+    <x-page-header title="Teams" subtitle="Bei Team-Spenden zählen die Runden aller Teammitglieder.">
+        <a href="{{ route('teams.create') }}" class="btn-primary"><x-icon name="plus" class="size-4" /> Team gründen</a>
+    </x-page-header>
+    <x-search-form placeholder="Teamname" class="mb-4" />
+    @if ($teams->isEmpty())
+        <x-empty message="Noch keine Teams." />
+    @else
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Team</th><th>Verantwortlich</th><th></th><th class="num">Läufer</th><th class="num">Runden</th><th class="num">Team-Spenden</th></tr></thead>
+                <tbody>
+                @foreach ($teams as $t)
+                    <tr>
+                        <td>
+                            @can('view', $t)
+                                <a href="{{ route('teams.edit', $t) }}" class="font-medium">{{ $t->name }}</a>
+                            @else
+                                {{ $t->name }}
                             @endcan
-                            <th></th>
-                            </thead>
-                            <tbody>
-                            @foreach($teams as $team)
-                                <tr>
-                                    <td>
-                                        {{$team->name}}
-                                    </td>
-                                    <td>
-                                        {{$team->laeufer->count()}}
-                                    </td>
-                                    <td>
-                                        {{$team->sponsorings->count()}}
-                                    </td>
-                                    <td>
-                                        {{$team->laeufer->sum('runden')}}
-                                    </td>
-                                    <td>
-                                        @if($team->open)
-                                            {{__('öffentlich')}}
-                                        @else
-                                            {{__('nicht öffentlich')}}
-                                        @endif
-                                    </td>
-                                    @can('edit teams')
-                                        <td>{{$team->besitzer->name}}</td>
-                                    @endcan
-                                    <td>
-                                        <a href="{{url('teams/'.$team->id.'/edit')}}" class="btn btn-sm btn-outline-warning">
-                                            <i class="fas fa-edit d-block d-md-none "></i>
-                                            <div class="d-none d-md-block">
-                                                {{__('anzeigen')}}
-                                            </div>
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </div>
+                        </td>
+                        <td class="text-slate-600">{{ $t->besitzer?->name }}</td>
+                        <td>@if ($t->open)<x-badge color="green">offen</x-badge>@else<x-badge>geschlossen</x-badge>@endif</td>
+                        <td class="num">{{ $t->laeufer_count }}</td>
+                        <td class="num">{{ (int) $t->laeufer_sum_runden }}</td>
+                        <td class="num">{{ euro($bilanz->teams[$t->id]['spende'] ?? 0) }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
         </div>
-    </div>
-@endsection
-@push('js')
-    <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready( function () {
-            $('table').DataTable();
-        } );
-    </script>
-
-
-@endpush
-
-@section('css')
-    <link href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet" />
-@endsection
+        <div class="mt-4">{{ $teams->links() }}</div>
+    @endif
+</x-layouts.app>

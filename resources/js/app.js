@@ -1,32 +1,54 @@
-/**
- * First we will load all of this project's JavaScript dependencies which
- * includes Vue and other libraries. It is a great starting point when
- * building robust, powerful web applications using Vue and Laravel.
- */
+import Alpine from 'alpinejs';
 
-require('./bootstrap');
-
-window.Vue = require('vue');
+window.Alpine = Alpine;
 
 /**
- * The following block of code may be used to automatically register your
- * Vue components. It will recursively scan this directory for the Vue
- * components and automatically register them with their "basename".
- *
- * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
+ * Kleine Hilfsfunktion für JSON-Anfragen an interne Endpunkte (mit CSRF-Token).
  */
+window.api = async (url, options = {}) => {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    const response = await fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const message = data.message || 'Es ist ein Fehler aufgetreten.';
+        throw Object.assign(new Error(message), { status: response.status, data });
+    }
+    return data;
+};
 
-// const files = require.context('./', true, /\.vue$/i);
-// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default));
-
-Vue.component('example-component', require('./components/ExampleComponent.vue').default);
+window.euro = (cent) => (cent / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
 /**
- * Next, we will create a fresh Vue application instance and attach it to
- * the page. Then, you may begin adding components to this application
- * or customize the JavaScript scaffolding to fit your unique needs.
+ * Suchfeld mit Vorschlägen (Läufer, Sponsoren, ...).
  */
+Alpine.data('suche', (url) => ({
+    q: '',
+    treffer: [],
+    offen: false,
+    laden: false,
+    async suchen() {
+        if (this.q.trim().length < 2) {
+            this.treffer = [];
+            this.offen = false;
+            return;
+        }
+        this.laden = true;
+        try {
+            this.treffer = await window.api(url + '?q=' + encodeURIComponent(this.q));
+            this.offen = true;
+        } finally {
+            this.laden = false;
+        }
+    },
+}));
 
-const app = new Vue({
-    el: '#app',
-});
+Alpine.start();

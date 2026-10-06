@@ -2,135 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\RundenUpdate;
-use App\Imports\RundenUpdateImport;
-use App\Model\Laeufer;
-use Carbon\Carbon;
-use DOMDocument;
+use App\Actions\ImportRunden;
+use App\Models\Laeufer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class ImportController extends Controller
 {
-    public function __construct()
+    public function create()
     {
-        $this->middleware('permission:import export');
-    }
-
-    public function import()
-    {
-        return view('import.create');
-    }
-
-    public function importFile(Request $request)
-    {
-        if (! $request->hasFile('file')) {
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'    => __('Datei fehlt'),
-            ]);
-        }
-
-        Excel::import(new RundenUpdateImport(), $request->file('file'));
-
-        return redirect('home')->with([
-            'type'  => 'success',
-            'Meldung'   => __(Laeufer::where('updated_at', '>=', Carbon::now()->subSeconds(30))->count().' Imports abgeschlossen'),
+        return view('lauftag.import', [
+            'event' => $this->event(),
+            'ergebnis' => session('import_ergebnis'),
+            'summe' => (int) Laeufer::sum('runden'),
+            'manuell' => Laeufer::where('runden_manuell', true)->count(),
         ]);
     }
 
-    public function importFromUrl($test = false)
+    public function datei(Request $request)
     {
+        $request->validate([
+            'datei' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:5120'],
+            'manuelle_ueberschreiben' => ['nullable', 'boolean'],
+        ]);
 
-        Log::info('Import von URL');
-        $string = 'Strat Import von URL';
+        return $this->ausfuehren(fn (ImportRunden $import) => $import->ausDatei(
+            $request->file('datei')->getRealPath(),
+            $request->file('datei')->getClientOriginalName(),
+        ), $request->boolean('manuelle_ueberschreiben'));
+    }
 
-        if (!config('config.spendenlauf.date')->isToday() && !$test) {
-            Log::info('Kein Spendenlauf heute');
-            return null;
-        }
+    public function url(Request $request)
+    {
+        $request->validate([
+            'url' => ['nullable', 'url'],
+            'manuelle_ueberschreiben' => ['nullable', 'boolean'],
+        ]);
 
+        return $this->ausfuehren(fn (ImportRunden $import) => $import->vonUrl($request->input('url')), $request->boolean('manuelle_ueberschreiben'));
+    }
 
-        $runden_alt = Laeufer::query()->sum('runden');
-        Log::info('Runden alt: '.$runden_alt);
-
-
-        $url = config('config.import.url');
-
-        if (empty($url)) {
-            Log::info('Keine URL angegeben');
-            return null;
-        }
-
+    private function ausfuehren(callable $schritt, bool $manuelleUeberschreiben)
+    {
         try {
-            $data = file_get_contents($url);
-            Log::info('Import von URL', ['url' => $url]);
+            $ergebnis = $schritt(new ImportRunden($this->event(), $manuelleUeberschreiben));
+        } catch (Throwable $e) {
+            report($e);
 
-            $pattern = '/Liste\/[a-zA-Z0-9]+\.csv/';
-            preg_match($pattern, $data, $matches);
-
-            Log::info('CSV-Datei gefunden: '.json_encode($matches));
-
-
-            if (empty($matches)) {
-                Log::error('Keine CSV-Datei gefunden');
-                return null;
-            }
-
-
-            $url = 'https://www.berlin-timing.de/'.$matches[0];
-
-            Log::info('CSV-URL: '.$url);
-
-            Log::info('Import von URL - Hole CSV-Datei');
-            $data = file_get_contents($url);
-
-            if ($data === false) {
-                Log::error('Fehler beim Lesen der Datei');
-                return null;
-            }
-
-
-            $file = 'temp.csv';
-
-
-            file_put_contents($file, $data);
-
-            Log::info("Datei heruntergeladen");
-
-            try {
-                Log::info('Starte Import');
-                Excel::import(new RundenUpdate(), $file);
-                unlink($file);
-                $runden_neu = Laeufer::query()->sum('runden');
-            } catch (\Exception $e) {
-                dd($e);
-            }
-
-
-            Cache::forget('sponsorings');
-            $string = 'Runden wurden aktualisiert. Anzahl der Runden vorher: '.$runden_alt.' Anzahl der Runden nachher: '.$runden_neu;
-
-        } catch (\Exception $e) {
-            Log::error('Fehler beim Lesen der URL');
-            Log::error($e);
-
-            return null;
+            return $this->fehler('Import fehlgeschlagen: '.$e->getMessage());
         }
 
-        Log::info('Runden wurden aktualisiert');
-
-
-        if ($test) {
-            return $string;
-        } else{
-            Log::info($string);
-        }
-
-        return null;
-
+        return redirect()->route('import.create')->with([
+            'type' => 'success',
+            'status' => "{$ergebnis['aktualisiert']} Läufer aktualisiert.",
+            'import_ergebnis' => $ergebnis,
+        ]);
     }
 }

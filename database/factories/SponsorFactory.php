@@ -1,39 +1,25 @@
 <?php
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+namespace Database\Factories;
 
-use Faker\Generator as Faker;
+use App\Models\Sponsor;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-$factory->define(\App\Model\Sponsor::class, function (Faker $faker) {
-    $Anrede = $faker->randomElement(['Herr', 'Frau', 'Firma']);
+/** @extends Factory<Sponsor> */
+class SponsorFactory extends Factory
+{
+    protected $model = Sponsor::class;
 
-    switch ($Anrede) {
-        case 'Herr':
-            $vorname = $faker->firstName('male');
-            $firmenname = null;
-
-            break;
-        case 'Frau':
-            $vorname = $faker->firstName('female');
-            $firmenname = null;
-            break;
-        case 'Firma':
-            $vorname = $faker->firstName();
-            $firmenname = $faker->company;
-            break;
+    public function definition(): array
+    {
+        return [
+            'anrede' => fake()->randomElement(['Herr', 'Frau']),
+            'vorname' => fake()->firstName(),
+            'nachname' => fake()->lastName(),
+            'email' => fake()->unique()->safeEmail(),
+            'strasse' => fake()->streetAddress(),
+            'plz' => fake()->postcode(),
+            'ort' => fake()->city(),
+        ];
     }
-
-    $Sponsor = [
-        'anrede' => $Anrede,
-        'vorname'   => $vorname,
-        'nachname'  => $faker->lastName,
-        'firmenname'    => $firmenname,
-        'email' => $faker->unique()->safeEmail,
-        'strasse'   => $faker->streetAddress,
-        'plz'   => $faker->postcode,
-        'ort'   => $faker->city,
-        'telefon'   => $faker->phoneNumber,
-    ];
-
-    return $Sponsor;
-});
+}

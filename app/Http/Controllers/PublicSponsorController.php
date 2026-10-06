@@ -3,100 +3,82 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PublicSponsorRequest;
-use App\Model\Laeufer;
-use App\Model\Projects;
-use App\Model\Sponsor;
-use App\Model\Sponsoring;
-use App\Model\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Models\Laeufer;
+use App\Models\Sponsor;
+use App\Models\Sponsoring;
+use App\Services\SpendenRechner;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Öffentliche Seite eines Läufers, über die Sponsoren selbst eine Spende zusagen können.
+ */
 class PublicSponsorController extends Controller
 {
-    public function show($uuid)
+    public function show(string $uuid)
     {
-        $laeufer = Laeufer::where('uuid', $uuid)->firstOrFail();
+        $laeufer = Laeufer::with(['team', 'sponsorings'])->where('uuid', $uuid)->firstOrFail();
+        $event = $this->event();
 
-        return view('public.laeufer.show', [
+        return view('public.laeufer', [
             'laeufer' => $laeufer,
-            'projekte' => Projects::all()
+            'event' => $event,
+            'projekte' => $event->projects()->orderBy('name')->get(),
+            'spende' => SpendenRechner::fuer($event)->bilanz()->laeuferSpende($laeufer->id),
         ]);
     }
 
-    public function store(PublicSponsorRequest $request, $uuid)
+    public function store(PublicSponsorRequest $request, string $uuid)
     {
-
         $laeufer = Laeufer::where('uuid', $uuid)->firstOrFail();
+        $event = $this->event();
 
-
-        try {
-            /** @var  $request */
-            if ($request->has('firmenname') and !empty($request->firmenname) and $request->anrede = $request->anrede) {
-                $sponsor = Sponsor::query()
-                    ->where('email', $request->email)
-                    ->orWhere(function ($query) use ($request) {
-                        $query->where('firmenname', $request->firmenname)
-                            ->where('plz', $request->plz)
-                            ->where('ort', $request->ort);
-                    })->first();
-            } else {
-                $sponsor = Sponsor::query()
-                    ->where('email', $request->email)
-                    ->orWhere(function ($query) use ($request) {
-                        $query->where('anrede', $request->anrede)
-                            ->where('vorname', $request->vorname)
-                            ->where('nachname', $request->nachname)
-                            ->where('plz', $request->plz)
-                            ->where('ort', $request->ort);
-                    })->first();
-            }
-
-            if (is_null($sponsor)) {
-                $sponsor = new Sponsor($request->validated());
-                $sponsor->save();
-            }
-
-        } catch (\Throwable $th) {
-            return redirect()->back()->with([
-                'type' => 'danger',
-                'Meldung' => 'Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.' . $th->getMessage()
-            ]);
+        if (! $event->anmeldungOffen()) {
+            return $this->fehler('Für diesen Spendenlauf können keine Spenden mehr zugesagt werden.');
         }
 
-        try {
-            $user = User::firstOrCreate([
-                'email' => $request->email,
-            ],[
-                'vorname' => $request->vorname,
-                'nachname'  => $request->nachname,
-                'password' => Str::password(32)
-            ]);
-        } catch (\Throwable $th) {
-            return redirect()->back()->with([
-                'type' => 'danger',
-                'Meldung' => "Es konnte kein Benutzerkonto für den Sponsor angelegt werden. Bitte versuchen Sie es erneut." . $th->getMessage()
-            ]);
-        }
+        $daten = $request->validated();
 
-        try {
-            $sponsoring = new Sponsoring($request->validated());
-            $sponsoring->sponsor_id = $sponsor->id;
-            $sponsoring->sponsorable_id = $laeufer->id;
-            $sponsoring->sponsorable_type = Laeufer::class;
-            $sponsoring->verwaltet_von = $user->id;
+        DB::transaction(function () use ($daten, $laeufer, $event) {
+            $sponsor = $this->sponsorFinden($daten) ?? Sponsor::create(collect($daten)->only([
+                'anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon',
+            ])->all());
+
+            if ($laeufer->verwaltet_von) {
+                $sponsor->users()->syncWithoutDetaching([$laeufer->verwaltet_von]);
+            }
+
+            $sponsoring = new Sponsoring([
+                'sponsor_id' => $sponsor->id,
+                'festBetrag' => $daten['festBetrag'] ?? 0,
+                'rundenBetrag' => $daten['rundenBetrag'] ?? 0,
+                'maxBetrag' => $daten['maxBetrag'] ?? null,
+            ]);
+            $sponsoring->verwaltet_von = $laeufer->verwaltet_von;
+            $sponsoring->sponsorable()->associate($laeufer);
             $sponsoring->save();
-        } catch (\Throwable $th) {
-            return redirect()->back()->with([
-                'type' => 'danger',
-                'Meldung' => 'Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.' . $th->getMessage()
-            ]);
-        }
 
+            $sponsoring->projects()->sync($daten['projects'] ?? $event->projects()->pluck('projects.id'));
+        });
 
+        SpendenRechner::vergessen();
 
-
-        return redirect()->back()->with([
+        return back()->with([
             'type' => 'success',
-            'Meldung' => 'Vielen Dank für Ihre Unterstützung!']);
+            'status' => 'Vielen Dank für Ihre Unterstützung! Nach dem Lauf erhalten Sie eine E-Mail mit dem Spendenbetrag und den Zahlungsinformationen.',
+        ]);
+    }
+
+    private function sponsorFinden(array $daten): ?Sponsor
+    {
+        return Sponsor::where('email', $daten['email'])->first()
+            ?? Sponsor::query()
+                ->where('plz', $daten['plz'])
+                ->where('ort', $daten['ort'])
+                ->when(
+                    filled($daten['firmenname'] ?? null),
+                    fn ($q) => $q->where('firmenname', $daten['firmenname']),
+                    fn ($q) => $q->where('vorname', $daten['vorname'])->where('nachname', $daten['nachname']),
+                )
+                ->first();
     }
 }

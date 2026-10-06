@@ -2,241 +2,289 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\addTeamRequest;
-use App\Http\Requests\CreateLaeuferRequest;
+use App\Actions\LaeuferUebernehmen;
+use App\Actions\Startnummernvergabe;
+use App\Enums\Kategorie;
+use App\Http\Requests\LaeuferRequest;
 use App\Mail\AddLaeuferToTeam;
-use App\Model\Laeufer;
-use App\Model\Startnummer;
-use App\Model\Teams;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Laeufer;
+use App\Models\Schulklasse;
+use App\Models\Teams;
+use App\Services\SpendenRechner;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class LaeuferController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth']);
-    }
+    private const SORTIERUNG = [
+        'nachname' => ['nachname', 'vorname'],
+        'startnummer' => ['startnummer'],
+        'runden' => ['runden'],
+        'geburtsdatum' => ['geburtsdatum'],
+        'created_at' => ['created_at'],
+    ];
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->can('edit laeufer')) {
-            $laeufer = Laeufer::query()->orderBy('nachname')->get();
-        } else {
-            $laeufer = auth()->user()->laeufer()->orderBy('nachname')->get();
+        $event = $this->event();
+        $user = $request->user();
+
+        $sort = array_key_exists($request->input('sort'), self::SORTIERUNG) ? $request->input('sort') : 'nachname';
+        $dir = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        $query = Laeufer::query()
+            ->with(['team', 'schulklasse', 'besitzer'])
+            ->unless($user->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $user->id))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $suche = '%'.$request->input('q').'%';
+                $q->where(fn ($q) => $q->where('vorname', 'like', $suche)
+                    ->orWhere('nachname', 'like', $suche)
+                    ->orWhere('startnummer', $request->input('q')));
+            })
+            ->when($request->filled('kategorie'), fn ($q) => $q->where('kategorie', $request->input('kategorie')))
+            ->when($request->filled('klasse'), fn ($q) => $q->where('schulklasse_id', $request->input('klasse')))
+            ->when($request->filled('team'), fn ($q) => $q->where('team_id', $request->input('team')));
+
+        foreach (self::SORTIERUNG[$sort] as $spalte) {
+            $query->orderBy($spalte, $dir);
         }
 
-        $laeufer->load(['team', 'besitzer']);
-
         return view('laeufer.index', [
-            'laeufer'   => $laeufer,
+            'laeufer' => $query->paginate(50)->withQueryString(),
+            'bilanz' => SpendenRechner::fuer($event)->bilanz(),
+            'klassen' => Schulklasse::orderBy('stufe')->orderBy('name')->pluck('name', 'id'),
+            'event' => $event,
         ]);
+    }
+
+    public function create(Request $request)
+    {
+        $event = $this->event();
+
+        if (! $event->anmeldungOffen() && ! $request->user()->can('edit laeufer')) {
+            return $this->fehler('Die Anmeldung für diesen Spendenlauf ist geschlossen.', route('laeufer.index'));
+        }
+
+        return view('laeufer.create', [
+            'teams' => $this->waehlbareTeams($request),
+            'klassen' => Schulklasse::orderBy('stufe')->orderBy('name')->pluck('name', 'id'),
+            'event' => $event,
+        ]);
+    }
+
+    public function store(LaeuferRequest $request)
+    {
+        $event = $this->event();
+        $user = $request->user();
+
+        if (! $event->anmeldungOffen() && ! $user->can('edit laeufer')) {
+            return $this->fehler('Die Anmeldung für diesen Spendenlauf ist geschlossen.', route('laeufer.index'));
+        }
+
+        $daten = $request->laeuferDaten();
+
+        $vorhanden = Laeufer::query()
+            ->where('vorname', $daten['vorname'])
+            ->where('nachname', $daten['nachname'])
+            ->when($daten['geburtsdatum'] ?? null, fn ($q, $d) => $q->whereDate('geburtsdatum', $d))
+            ->first();
+
+        if ($vorhanden) {
+            return redirect()->route('laeufer.index')->with([
+                'type' => 'warning',
+                'status' => "{$vorhanden->name} ist bereits angemeldet (Startnummer {$vorhanden->startnummer}).",
+            ]);
+        }
+
+        $laeufer = DB::transaction(function () use ($request, $daten, $event, $user) {
+            $laeufer = new Laeufer($daten);
+            $laeufer->verwaltet_von = $user->id;
+            $laeufer->team_id = $this->teamFuerAnmeldung($request);
+            $laeufer->save();
+
+            $wunsch = $user->can('edit startnummer') ? ($request->integer('startnummer') ?: null) : null;
+            (new Startnummernvergabe($event))->vergeben($laeufer, $wunsch);
+
+            return $laeufer;
+        });
+
+        return $this->erfolg("{$laeufer->name} wurde angemeldet. Startnummer: {$laeufer->startnummer}", route('laeufer.edit', $laeufer));
     }
 
     public function show(Laeufer $laeufer)
     {
-        return $this->edit($laeufer);
+        return redirect()->route('laeufer.edit', $laeufer);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return
-     */
-    public function create()
+    public function edit(Request $request, Laeufer $laeufer)
     {
-        if (!auth()->user()->can('edit laeufer|edit teams')) {
-            $teams = auth()->user()->teams()->orderBy('name')->get();
-        } else {
-            $teams = Teams::query()->orderBy('name')->get();
-        }
+        $this->authorize('view', $laeufer);
+        $event = $this->event();
 
-        return view('laeufer.create',
-        [
-            'teams' => $teams,
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(CreateLaeuferRequest $request)
-    {
-        $Input = $request->validated();
-
-        $Startnummer = Startnummer::orderBy('startnummer')->first();
-        $Laeufer = Laeufer::firstOrCreate([
-            'vorname'    =>  $Input['vorname'],
-            'nachname'    =>  $Input['nachname'],
-            'geburtsdatum'    => $Input['geburtsdatum'],
-        ], [
-            'geschlecht'    => $request->geschlecht ?? null,
-            'startnummer'   => $Startnummer->startnummer,
-            'email'         => $request->email ?? null,
-            'verwaltet_von' => auth()->id(),
-        ]);
-
-        if ($Laeufer->wasRecentlyCreated) {
-            $Startnummer->delete();
-
-            if ($request->team_id) {
-                $Laeufer->team_id =$request->team_id;
-                $Laeufer->save();
-            } elseif ($request->team_name) {
-                $Team = Teams::firstOrCreate([
-                    'name'  => $request->team_name,
-                    'verwaltet_von' => auth()->id(),
-
-                ]);
-                $Laeufer->team_id = $Team->id;
-                $Laeufer->save();
-            }
-
-
-
-            return redirect(url('/laeufer'))->with([
-                'type'   => 'success',
-                'Meldung'    => 'Läufer wurde angemeldet. Startnummer: '.$Laeufer->startnummer,
-            ]);
-        }
-
-        return redirect(url('/laeufer'))->with([
-            'type'   => 'warning',
-            'Meldung'    => 'Läufer bereits vorhanden. Startnummer: '.$Laeufer->startnummer,
-        ]);
-    }
-
-    /**
-     *
-     *
-     * @param  \App\Model\Laeufer  $laeufer
-     * @return \Illuminate\Http\Response
-     */
-    public function bescheinigung(Laeufer $laeufer)
-    {
-        if ($laeufer->verwaltet_von != auth()->id() and !auth()->user()->can('edit laeufer')){
-            return back()->with([
-                'type'   => 'danger',
-                'Meldung'    => 'Berechtigung fehlt.',
-            ]);
-        }
-
-        $pdf = PDF::loadView('laeufer.bescheinigung', [
-            'laeufer' => $laeufer
-        ]);
-        return $pdf->stream('Bescheinigung.pdf');
-
-    }
-
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Model\Laeufer  $laeufer
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function edit(Laeufer $laeufer)
-    {
-        if ($laeufer->verwaltet_von != auth()->id() and !auth()->user()->can('edit laeufer')){
-            return back()->with([
-                'type'   => 'danger',
-                'Meldung'    => 'Berechtigung fehlt.',
-            ]);
-        }
+        $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor', 'sponsorings.projects']);
+        $rechner = SpendenRechner::fuer($event);
 
         return view('laeufer.edit', [
-            'Laeufer'=> $laeufer->load(['team', 'sponsorings', 'sponsorings.sponsor', 'sponsorings.projects', 'sponsorings.sponsorable']),
+            'laeufer' => $laeufer,
+            'event' => $event,
+            'bilanz' => $rechner->bilanz(),
+            'teams' => $this->waehlbareTeams($request),
+            'klassen' => Schulklasse::orderBy('stufe')->orderBy('name')->pluck('name', 'id'),
+            'teamSponsorings' => $laeufer->team ? $laeufer->team->sponsorings()->with('sponsor')->get() : collect(),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Model\Laeufer  $laeufer
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Laeufer $laeufer)
+    public function update(LaeuferRequest $request, Laeufer $laeufer)
     {
-        $laeufer->update($request->all());
+        $this->authorize('update', $laeufer);
+        $event = $this->event();
+        $user = $request->user();
 
-        return redirect(url('laeufer'))->with([
-            'type'   => 'success',
-            'Meldung'    => 'Daten wurden geändert.',
-        ]);
+        if ($event->laufVorbei() && ! $user->can('edit laeufer')) {
+            return $this->fehler('Nach dem Lauf können die Daten nicht mehr geändert werden.');
+        }
+
+        DB::transaction(function () use ($request, $laeufer, $user, $event) {
+            $laeufer->fill($request->laeuferDaten());
+
+            if ($user->can('edit runden') && $request->filled('runden') && (int) $request->input('runden') !== $laeufer->runden) {
+                $laeufer->runden = $request->integer('runden');
+                $laeufer->runden_manuell = true;
+                $laeufer->runden_aktualisiert_am = now();
+            }
+
+            $laeufer->save();
+
+            if ($user->can('edit startnummer') && $request->filled('startnummer') && $request->integer('startnummer') !== $laeufer->startnummer) {
+                (new Startnummernvergabe($event))->vergeben($laeufer, $request->integer('startnummer'));
+            }
+        });
+
+        return $this->erfolg('Daten wurden gespeichert.', route('laeufer.edit', $laeufer));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Model\Laeufer  $laeufer
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Laeufer $laeufer)
     {
-        //
+        $this->authorize('delete', $laeufer);
+
+        if ($laeufer->sponsorings()->exists()) {
+            return $this->fehler('Der Läufer hat noch Sponsorings und kann nicht gelöscht werden.');
+        }
+
+        $nummer = $laeufer->startnummer;
+        $laeufer->startnummer = null;
+        $laeufer->save();
+        $laeufer->delete();
+
+        if ($nummer) {
+            (new Startnummernvergabe($this->event()))->freigeben($nummer);
+        }
+
+        return $this->erfolg("{$laeufer->name} wurde abgemeldet.", route('laeufer.index'));
     }
 
-    public function addTeam(Laeufer $laeufer)
+    public function teamBeitreten(Request $request, Laeufer $laeufer)
     {
-        if (! auth()->user()->can('edit laeufer') and $laeufer->verwaltet_von != auth()->user()->id) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
-        }
+        $this->authorize('update', $laeufer);
 
-        if (auth()->user()->can('edit teams')) {
-            $teams = Teams::query()->orderBy('name')->get();
-        } else {
-            $teams = Teams::query()
-                ->where('verwaltet_von', auth()->user()->id)
-                ->orWhere('open', 1)
-                ->orderBy('open', 'desc')
-                ->orderBy('name')
-                ->get();
-        }
-
-        return view('laeufer.addTeam', [
-            'laeufer'   => $laeufer,
-            'teams' => $teams->load('laeufer'),
+        $request->validate([
+            'team_id' => ['nullable', Rule::exists('teams', 'id')->where('event_id', $this->event()->id)],
+            'teamname' => ['nullable', 'required_without:team_id', 'string', 'max:100', Rule::unique('teams', 'name')->where('event_id', $this->event()->id)],
         ]);
-    }
 
-    public function storeTeam(Laeufer $laeufer, addTeamRequest $request)
-    {
-        $Team = Teams::find($request->team_id);
-        $laeufer->team_id = $Team->id;
+        if ($request->filled('team_id')) {
+            $team = Teams::findOrFail($request->integer('team_id'));
+            $this->authorize('join', $team);
+        } else {
+            $team = new Teams(['name' => $request->input('teamname'), 'open' => true]);
+            $team->verwaltet_von = $request->user()->id;
+            $team->save();
+        }
+
+        $laeufer->team_id = $team->id;
         $laeufer->save();
 
-        if ($Team->verwaltet_von != auth()->user()->id) {
-            Mail::to($Team->besitzer->email)->bcc('daniel.roehrich@esz-radebeul.de')->queue(new AddLaeuferToTeam($Team->besitzer->name, $laeufer->name, $Team->name));
+        if ($team->besitzer && ! $team->istVerwaltetVon($request->user())) {
+            $mail = Mail::to($team->besitzer->email);
+            if ($admin = config('spendenlauf.admin_mail')) {
+                $mail->bcc($admin);
+            }
+            $mail->queue(new AddLaeuferToTeam($team->besitzer->name, $laeufer->name, $team->name));
         }
 
-        return redirect(url('laeufer'))->with([
-            'type'   => 'success',
-            'Meldung'    => __('Läufer wurde dem Team hinzugefügt.'),
-        ]);
+        return $this->erfolg("{$laeufer->name} ist jetzt im Team „{$team->name}“.");
     }
 
-    public function removeTeam(Laeufer $laeufer)
+    public function teamVerlassen(Laeufer $laeufer)
     {
+        $this->authorize('update', $laeufer);
+
         $laeufer->team_id = null;
         $laeufer->save();
 
-        return redirect()->back()->with([
-            'type'   => 'success',
-            'Meldung'    => __('Läufer wurde aus Team entfernt.'),
+        return $this->erfolg("{$laeufer->name} wurde aus dem Team entfernt.");
+    }
+
+    public function bescheinigung(Laeufer $laeufer)
+    {
+        $this->authorize('view', $laeufer);
+
+        return Pdf::loadView('pdf.bescheinigung', [
+            'laeufer' => $laeufer,
+            'event' => $this->event(),
+        ])->stream('Bescheinigung-'.$laeufer->startnummer.'.pdf');
+    }
+
+    /** Läufer aus einem früheren Lauf übernehmen (für Eltern). */
+    public function uebernehmen(Request $request)
+    {
+        $event = $this->event();
+        $request->validate(['laeufer' => ['required', 'array'], 'laeufer.*' => ['integer']]);
+
+        $alte = Laeufer::withoutGlobalScope('event')
+            ->whereIn('id', $request->input('laeufer'))
+            ->where('event_id', '!=', $event->id)
+            ->unless($request->user()->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $request->user()->id))
+            ->get();
+
+        $neu = (new LaeuferUebernehmen($event))->ausfuehren($alte, $request->user());
+
+        $ohneKlasse = $neu->filter(fn ($l) => $l->kategorie === Kategorie::Schueler && ! $l->schulklasse_id)->count();
+
+        return redirect()->route('laeufer.index')->with([
+            'type' => $ohneKlasse ? 'warning' : 'success',
+            'status' => $neu->count().' Läufer übernommen.'.($ohneKlasse ? " Bitte bei $ohneKlasse Schüler(n) die Klasse prüfen." : ''),
         ]);
+    }
+
+    private function waehlbareTeams(Request $request)
+    {
+        return Teams::query()
+            ->unless($request->user()->can('edit teams'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $request->user()->id)->orWhere('open', true)))
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function teamFuerAnmeldung(LaeuferRequest $request): ?int
+    {
+        if ($request->filled('team_id')) {
+            $team = Teams::findOrFail($request->integer('team_id'));
+            $this->authorize('join', $team);
+
+            return $team->id;
+        }
+
+        if ($request->filled('teamname')) {
+            $team = new Teams(['name' => $request->input('teamname'), 'open' => true]);
+            $team->verwaltet_von = $request->user()->id;
+            $team->save();
+
+            return $team->id;
+        }
+
+        return null;
     }
 }

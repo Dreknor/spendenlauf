@@ -2,7 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class CreateUsersTable extends Migration
 {
@@ -24,11 +27,13 @@ class CreateUsersTable extends Migration
             $table->timestamps();
         });
 
-        \App\Model\User::create([
-           'vorname' => 'Admin',
-           'nachname' => config('app.name'),
-           'email' => env('MAIL_FROM_ADDRESS'),
-            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random())
+        DB::table('users')->insert([
+            'vorname' => 'Admin',
+            'nachname' => config('app.name'),
+            'email' => env('MAIL_FROM_ADDRESS') ?: 'admin@example.org',
+            'password' => Hash::make(Str::random()),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 

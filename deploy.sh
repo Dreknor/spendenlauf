@@ -1,19 +1,29 @@
 #!/bin/sh
-# activate maintenance mode
-php artisan down
-# update source code
+# Aktualisiert die Installation auf dem Server.
+set -e
+
+php artisan down --retry=60
+
 git pull
-# update PHP dependencies
-composer install --no-interaction --prefer-dist
-# --no-interaction Do not ask any interactive question
-# --no-dev  Disables installation of require-dev packages.
-# --prefer-dist  Forces installation from package dist even for dev versions.
-# update database
+
+# PHP-Abhängigkeiten (ohne Entwicklungspakete)
+composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+# Frontend bauen (Tailwind/Vite). Ohne Node auf dem Server: lokal "npm run build" ausführen und public/build hochladen.
+if command -v npm >/dev/null 2>&1; then
+    npm ci --no-audit --no-fund
+    npm run build
+else
+    echo "Hinweis: npm nicht gefunden – public/build muss bereits aktuell sein."
+fi
+
 php artisan migrate --force
-# --force  Required to run when in production.
 
-#Cache clear
-php artisan cache:clear
+# Caches neu aufbauen
+php artisan optimize:clear
+php artisan optimize
 
-# stop maintenance mode
+# Laufende Queue-Worker neu starten (falls QUEUE_CONNECTION=database)
+php artisan queue:restart
+
 php artisan up

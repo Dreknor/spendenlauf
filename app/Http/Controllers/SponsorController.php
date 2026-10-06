@@ -2,200 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateSponsorRequest;
-use App\Mail\SponsorAnschreiben;
-use App\Model\Laeufer;
-use App\Model\Projects;
-use App\Model\Sponsor;
-use App\Model\Teams;
-use App\Repositories\SpendenlaufRepository;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use App\Http\Requests\SponsorRequest;
+use App\Models\Sponsor;
+use App\Services\SpendenRechner;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class SponsorController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->can('edit sponsoren')) {
-            $sponsoren = Sponsor::query()->orderBy('nachname')->get();
-        } else {
-            $sponsoren = auth()->user()->sponsoren()->orderBy('nachname')->paginate(20);
-        }
+        $user = $request->user();
 
-        $sponsoren->load(['sponsorings', 'verwalter']);
+        $sponsoren = Sponsor::query()
+            ->withCount('sponsorings')
+            ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $suche = '%'.$request->input('q').'%';
+                $q->where(fn ($q) => $q->where('vorname', 'like', $suche)->orWhere('nachname', 'like', $suche)
+                    ->orWhere('firmenname', 'like', $suche)->orWhere('email', 'like', $suche)->orWhere('ort', 'like', $suche));
+            })
+            ->when($request->input('filter') === 'aktuell', fn ($q) => $q->has('sponsorings'))
+            ->orderBy('nachname')->orderBy('firmenname')
+            ->paginate(50)
+            ->withQueryString();
 
         return view('sponsoren.index', [
-            'sponsoren'   => $sponsoren,
+            'sponsoren' => $sponsoren,
+            'bilanz' => SpendenRechner::fuer($this->event())->bilanz(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         return view('sponsoren.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(CreateSponsorRequest $request)
+    public function store(SponsorRequest $request)
     {
-        $sponsor = Sponsor::firstOrNew([
-            'vorname'  => $request->vorname,
-            'nachname'  => $request->nachname,
-            'firmenname' => $request->firmenname,
-            'ort'  => $request->ort,
-            'plz'  => $request->plz,
-            'strasse'  => $request->strasse,
+        $daten = $request->validated();
 
-        ], $request->validated());
+        $sponsor = Sponsor::query()
+            ->where('nachname', $daten['nachname'] ?? null)
+            ->where('vorname', $daten['vorname'] ?? null)
+            ->where('firmenname', $daten['firmenname'] ?? null)
+            ->where('plz', $daten['plz'] ?? null)
+            ->first() ?? Sponsor::create($daten);
 
-        $sponsor->save();
+        $sponsor->users()->syncWithoutDetaching([$request->user()->id]);
 
-        $sponsor->users()->syncWithoutDetaching(auth()->user());
+        $ziel = $request->input('weiter') === 'sponsoring'
+            ? route('sponsorings.create', ['sponsor' => $sponsor->id, 'laeufer' => $request->input('laeufer')])
+            : route('sponsoren.index');
 
-        return redirect(url('sponsoren'))->with([
-            'type'   => 'success',
-            'Meldung'  => __('Spender angelegt'),
-        ]);
+        return $this->erfolg("Sponsor „{$sponsor->name}“ wurde angelegt.", $ziel);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Model\Sponsor  $sponsor
-     * @return \Illuminate\Http\Response
-     */
     public function show(Sponsor $sponsor)
     {
-        return $this->edit($sponsor);
+        return redirect()->route('sponsoren.edit', $sponsor);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Model\Sponsor  $sponsor
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($sponsor)
+    public function edit(Sponsor $sponsor)
     {
-        $sponsor = Sponsor::find($sponsor);
+        $this->authorize('view', $sponsor);
 
-        if (! auth()->user()->can('edit sponsoren') and ! auth()->user()->sponsoren->contains($sponsor)) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
-        }
-
-        $sponsor->load(['sponsorings', 'sponsorings.projects', 'sponsorings.projects.media', 'sponsorings.sponsorable', 'sponsorings.sponsor']);
+        $sponsor->load(['sponsorings.sponsorable', 'sponsorings.projects']);
+        $rechner = SpendenRechner::fuer($this->event());
 
         return view('sponsoren.edit', [
-            'sponsor'    =>$sponsor,
+            'sponsor' => $sponsor,
+            'bilanz' => $rechner->bilanz(),
+            'konto' => $rechner->sponsorKonto($sponsor),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Model\Sponsor  $sponsor
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $sponsor)
+    public function update(SponsorRequest $request, Sponsor $sponsor)
     {
-        $sponsor = Sponsor::find($sponsor);
-        if ($sponsor->update($request->all())) {
-            return redirect()->back()->with([
-                'type'   => 'success',
-                'Meldung'  => __('Spender bearbeitet'),
-            ]);
-        }
+        $this->authorize('update', $sponsor);
 
-        return redirect()->back()->with([
-            'type'   => 'danger',
-            'Meldung'  => __('Speichern fehlgeschlagen'),
-        ]);
-    }
+        $sponsor->update($request->validated());
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Model\Sponsor  $sponsor
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Sponsor $sponsor)
-    {
-        //
-    }
-
-    public function sendMail($Sponsor)
-    {
-
-        Log::debug('SponsorController@sendMail');
-
-        if (! auth()->user()->can('send mail')) {
-            return redirect()->back()->with([
-                'type'   => 'danger',
-                'Meldung'  => __('Berechtigung fehlt'),
-            ]);
-        }
-
-        if ($Sponsor == 'all') {
-            $sponsors = Sponsor::where('mail_send', null)->get();
-        } else {
-            $sponsors = Sponsor::where('id', $Sponsor)->get();
-            Log::debug('Sponsor: ', [
-                'Sponsor' => $sponsors,
-            ]);
-        }
-
-        $sponsors->load(['sponsorings', 'sponsorings.sponsorable', 'sponsorings.projects']);
-
-        $repository = new SpendenlaufRepository();
-        $zaehler = 0;
-
-        $projekte = Projects::all();
-
-        foreach ($sponsors as $sponsor) {
-            if (! is_null($sponsor->email) and $sponsor->sponsorings->count() > 0 and is_null($sponsor->mail_send)) {
-                $zaehler++;
-
-                Log::debug('Sponsoring: ', [
-                    'Sponsoring' => $sponsor->sponsorings,
-                ]);
-
-
-
-                $sponsoring_projects = $sponsor->sponsorings()->whereHas('projects', function (Builder $query){
-                    return $query->where('projects.id', '!=', 4);
-                })->count();
-
-
-                    Mail::to($sponsor->email)->send(new SponsorAnschreiben($sponsor, $repository->anzahlLauefer(), $repository->spendensumme(), $sponsoring_projects));
-                $sponsor->update(['mail_send' => Carbon::now()]);
-            }
-        }
-
-        return redirect()->back()->with([
-            'type'=>'success',
-            'Meldung' => __("Es wurden $zaehler Mails versandt"),
-        ]);
+        return $this->erfolg('Sponsor gespeichert.');
     }
 }

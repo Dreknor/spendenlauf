@@ -13,9 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('laeufers', function (Blueprint $table) {
-            $table->uuid('uuid')->after('id')->default(DB::raw('UUID()'))->unique();
+            if (in_array(DB::getDriverName(), ['mysql', 'mariadb'])) {
+                $table->uuid('uuid')->after('id')->default(DB::raw('UUID()'))->unique();
+            } else {
+                $table->uuid('uuid')->nullable()->unique();
+            }
         });
-
 
     }
 

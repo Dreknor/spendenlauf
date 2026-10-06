@@ -2,114 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Groups;
-use App\Model\User;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
-    public function __construct()
+    public const RECHTE = [
+        'edit user' => 'Benutzer verwalten',
+        'edit permission' => 'Rechte vergeben',
+        'edit event' => 'Veranstaltungen & Klassen verwalten',
+        'edit projekt' => 'Projekte verwalten',
+        'edit laeufer' => 'alle Läufer bearbeiten',
+        'edit teams' => 'alle Teams bearbeiten',
+        'edit sponsoren' => 'alle Sponsoren bearbeiten',
+        'edit sponsorings' => 'alle Spenden bearbeiten',
+        'edit startnummer' => 'Startnummern verwalten',
+        'schnellerfassung' => 'Schnellerfassung am Lauftag',
+        'edit runden' => 'Runden eingeben',
+        'import export' => 'Import & Export',
+        'show auswertung' => 'Statistiken & Auswertungen',
+        'manage abrechnung' => 'Abrechnung (Zahlungen, Mails)',
+        'send mail' => 'Mails an Sponsoren (alt)',
+    ];
+
+    public function index(Request $request)
     {
+        $users = User::query()
+            ->with('permissions')
+            ->withCount('laeufer')
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $suche = '%'.$request->input('q').'%';
+                $q->where(fn ($q) => $q->where('vorname', 'like', $suche)->orWhere('nachname', 'like', $suche)->orWhere('email', 'like', $suche));
+            })
+            ->when($request->input('filter') === 'team', fn ($q) => $q->has('permissions'))
+            ->orderBy('nachname')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('users.index', ['users' => $users]);
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        $this->middleware('permission:edit user');
-
-        return view('user.index', [
-            'users' => User::with('permissions')->get(),
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show(User $user)
     {
-        $this->middleware('permission:edit user');
-
-        return view('user.show', [
-            'user' => $user,
-            'permissions' => Permission::all(),
+        return view('users.show', [
+            'user' => $user->load('permissions'),
+            'rechte' => collect(self::RECHTE)->only(Permission::pluck('name')),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, User $user)
     {
-        $this->middleware('permission:edit user');
-        $user->fill($request->all());
-
-        if (auth()->user()->can('edit permission')) {
-            $permissions = $request->input('permissions');
-            $user->syncPermissions($permissions);
-        }
-
-        if ($user->save()) {
-            return redirect()->back()->with([
-                'type'   => 'success',
-                'Meldung'    => 'Daten gespeichert.',
-            ]);
-        }
-
-        return redirect()->back()->with([
-            'type'   => 'danger',
-            'Meldung'    => 'Update fehlgeschlagen',
+        $daten = $request->validate([
+            'vorname' => ['required', 'string', 'max:255'],
+            'nachname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
+
+        $user->fill(collect($daten)->only(['vorname', 'nachname', 'email'])->all())->save();
+
+        if ($request->user()->can('edit permission')) {
+            $user->syncPermissions($daten['permissions'] ?? []);
+        }
+
+        return $this->erfolg('Benutzer gespeichert.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function sendVerification(User $user)
     {
-    }
+        if ($user->hasVerifiedEmail()) {
+            return $this->fehler('Die E-Mail-Adresse ist bereits bestätigt.');
+        }
 
-    public function sendVerification($user_id)
-    {
-        $user = User::find($user_id);
         $user->sendEmailVerificationNotification();
 
-        return redirect()->back()->with([
-            'type'   => 'success',
-            'Meldung'    => 'E-Mail wurde versandt.',
-        ]);
+        return $this->erfolg('Bestätigungs-Mail wurde versandt.');
     }
 }

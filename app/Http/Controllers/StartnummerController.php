@@ -2,69 +2,55 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Startnummer;
+use App\Models\Laeufer;
+use App\Models\Startnummer;
 use Illuminate\Http\Request;
 
 class StartnummerController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:edit startnummer');
-    }
-
     public function index()
     {
-        $startnummern = Startnummer::query()->orderBy('startnummer')->get();
+        $vergeben = Laeufer::whereNotNull('startnummer')->pluck('startnummer');
 
         return view('startnummern.index', [
-            'startnummern' => $startnummern,
+            'frei' => Startnummer::whereNotIn('startnummer', $vergeben)->orderBy('startnummer')->pluck('startnummer'),
+            'vergebenAnzahl' => $vergeben->count(),
+            'hoechste' => $vergeben->max(),
         ]);
-    }
-
-    public function create()
-    {
-        return view('startnummer.create');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'startnummer_start' => 'required|integer|min:1',
-            'startnummer_ende' => 'required|integer|min:1',
+        $daten = $request->validate([
+            'von' => ['required', 'integer', 'min:1'],
+            'bis' => ['required', 'integer', 'gte:von', 'lte:'.((int) $request->input('von') + 5000)],
         ]);
 
-        $nummern = [];
+        $event = $this->event();
+        $vorhanden = Startnummer::pluck('startnummer')->merge(Laeufer::withTrashed()->whereNotNull('startnummer')->pluck('startnummer'))->flip();
 
-        for ($i = $request->startnummer_start; $i <= $request->startnummer_ende; $i++) {
-            $nummern[] = [
-                'startnummer' => $i,
-            ];
+        $neu = collect(range($daten['von'], $daten['bis']))
+            ->reject(fn ($n) => isset($vorhanden[$n]))
+            ->map(fn ($n) => ['event_id' => $event->id, 'startnummer' => $n, 'created_at' => now(), 'updated_at' => now()]);
+
+        foreach ($neu->chunk(500) as $chunk) {
+            Startnummer::insert($chunk->values()->all());
         }
 
-        Startnummer::query()->insert($nummern);
-
-        return redirect('startnummern')->with([
-            'type' => 'success',
-            'message' => 'Startnummern wurde erstellt',
-        ]);
+        return $this->erfolg($neu->count().' Startnummern wurden angelegt.');
     }
 
     public function destroy(Startnummer $startnummer)
     {
-        try {
-            $startnummer->delete();
-        } catch (\Exception $e) {
-            return redirect('startnummern')->with([
-                'type' => 'danger',
-                'message' => 'Startnummer konnte nicht gelöscht werden',
-            ]);
-        }
+        $startnummer->delete();
 
-        return redirect('startnummern')->with([
-            'type' => 'success',
-            'message' => 'Startnummer wurde gelöscht',
-        ]);
+        return $this->erfolg("Startnummer {$startnummer->startnummer} wurde entfernt.");
     }
 
+    public function destroyMany()
+    {
+        $anzahl = Startnummer::query()->delete();
 
+        return $this->erfolg("$anzahl freie Startnummern wurden entfernt.");
+    }
 }

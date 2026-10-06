@@ -2,175 +2,90 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateTeamRequest;
-use App\Model\Teams;
+use App\Http\Requests\TeamRequest;
+use App\Models\Teams;
+use App\Services\SpendenRechner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class TeamsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->can('edit teams')) {
-            $teams = Teams::query()->orderBy('name')->get();
-        } else {
-            $teams = auth()->user()->teams()->get();
-        }
+        $user = $request->user();
 
-        $teams->load(['laeufer', 'sponsorings', 'sponsorings.sponsorable', 'besitzer']);
+        $teams = Teams::query()
+            ->withCount('laeufer')
+            ->withSum('laeufer', 'runden')
+            ->with('besitzer')
+            ->unless($user->can('edit teams'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $user->id)
+                ->orWhereHas('laeufer', fn ($l) => $l->where('verwaltet_von', $user->id))))
+            ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->input('q').'%'))
+            ->orderBy('name')
+            ->paginate(50)
+            ->withQueryString();
 
         return view('teams.index', [
             'teams' => $teams,
+            'bilanz' => SpendenRechner::fuer($this->event())->bilanz(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         return view('teams.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(CreateTeamRequest $request)
+    public function store(TeamRequest $request)
     {
-        $team = new Teams();
-        $team->fill($request->validated());
-        $team->verwaltet_von = auth()->user()->id;
-
+        $team = new Teams(['name' => $request->input('name'), 'open' => $request->boolean('open')]);
+        $team->verwaltet_von = $request->user()->id;
         $team->save();
 
-        return redirect(url('teams'))->with([
-            'type'   => 'success',
-            'Meldung'    =>__('Team wurde erstellt.'),
-        ]);
+        return $this->erfolg("Team „{$team->name}“ wurde erstellt.", route('teams.edit', $team));
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Model\Teams  $teams
-     * @return \Illuminate\Http\Response
-     */
     public function show(Teams $team)
     {
-        return $this->edit($team);
+        return redirect()->route('teams.edit', $team);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Model\Teams  $teams
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Teams $team)
     {
-        if (auth()->user()->can('edit teams') or $team->verwaltet_von == auth()->user()->id) {
-            $team->load(['sponsorings', 'sponsorings.sponsor', 'sponsorings.sponsorable', 'sponsorings.projects', 'sponsorings.sponsorable']);
+        $this->authorize('view', $team);
 
-            return view('teams.edit', [
-                'team'  => $team,
-            ]);
-        }
+        $team->load(['laeufer' => fn ($q) => $q->orderBy('nachname'), 'laeufer.schulklasse', 'sponsorings.sponsor', 'besitzer']);
 
-        return redirect()->back()->with([
-            'type'  => 'danger',
-            'Meldung'   => __('Berechtigung fehlt'),
+        return view('teams.edit', [
+            'team' => $team,
+            'bilanz' => SpendenRechner::fuer($this->event())->bilanz(),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Model\Teams  $teams
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Teams $team)
+    public function update(TeamRequest $request, Teams $team)
     {
-        if (! auth()->user()->can('edit teams') and $team->verwaltet_von != auth()->user()->id) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Berechtigung fehlt'),
-            ]);
-        }
+        $this->authorize('update', $team);
 
-        $team->update([
-            'name'  => $request->name,
-            'open'   => $request->open,
-        ]);
+        $team->update(['name' => $request->input('name'), 'open' => $request->boolean('open')]);
 
-        return redirect(url('teams'))->with([
-            'type'  => 'success',
-            'Meldung'  => __('Änderungen gespeichert'),
-        ]);
+        return $this->erfolg('Änderungen gespeichert.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Model\Teams  $teams
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($teams)
+    public function destroy(Request $request, Teams $team)
     {
+        $this->authorize('delete', $team);
 
-        try {
-            $teams = Teams::findOrFail($teams);
-        } catch (\Exception $e) {
-            return redirect()->back()->with([
-                'type'  => 'danger',
-                'Meldung'   => __('Team nicht gefunden'),
-            ]);
+        if ($team->laeufer()->exists()) {
+            return $this->fehler('Das Team kann nicht gelöscht werden, da es noch Läufer enthält.');
         }
 
-
-
-        if ($teams->verwaltet_von == auth()->user()->id or auth()->user()->can('edit teams')) {
-            if ($teams->laeufer()->count() > 0) {
-                return redirect()->back()->with([
-                    'type'  => 'danger',
-                    'Meldung'   => __('Team kann nicht gelöscht werden, da es noch Läufer enthält'),
-                ]);
-            }
-
-            if ($teams->sponsorings()->count() > 0) {
-                return redirect()->back()->with([
-                    'type'  => 'danger',
-                    'Meldung'   => __('Team kann nicht gelöscht werden, da es noch Sponsoring enthält'),
-                ]);
-            }
-
-            Log::info('Team gelöscht', [
-                'Team gelöscht' => $teams->name,
-                'ID'            => $teams->id,
-                'User'          => auth()->user()->name,
-            ]);
-
-            $teams->delete();
-
-            return redirect(url('teams'))->with([
-                'type'  => 'success',
-                'Meldung'   => __('Team gelöscht'),
-            ]);
+        if ($team->sponsorings()->exists()) {
+            return $this->fehler('Das Team kann nicht gelöscht werden, da es noch Sponsorings hat.');
         }
 
-        return redirect()->back()->with([
-            'type'  => 'danger',
-            'Meldung'   => __('Berechtigung fehlt'),
-        ]);
+        Log::info('Team gelöscht', ['team' => $team->name, 'id' => $team->id, 'user' => $request->user()->name]);
+        $team->delete();
+
+        return $this->erfolg('Team gelöscht.', route('teams.index'));
     }
 }

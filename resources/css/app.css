@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@font-face {
+    font-family: 'MetaPro';
+    src: url('../fonts/metapro.ttf') format('truetype');
+    font-weight: 400 700;
+    font-display: swap;
+}
+
+/* Farben des Evangelischen Schulzentrums Radebeul (esz-radebeul.de) */
+@theme {
+    --font-sans: 'MetaPro', 'Source Sans Pro', 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+
+    --color-esz-50: #fdf2f5;
+    --color-esz-100: #fbe4ea;
+    --color-esz-200: #f6c9d5;
+    --color-esz-300: #ee9db3;
+    --color-esz-400: #e2668a;
+    --color-esz-500: #d63d67;
+    --color-esz-600: #cc224d;
+    --color-esz-700: #a91a40;
+    --color-esz-800: #8c1939;
+    --color-esz-900: #771934;
+
+    --color-navy-50: #eef3fb;
+    --color-navy-100: #d8e2f4;
+    --color-navy-200: #b2c5e8;
+    --color-navy-300: #7f9dd6;
+    --color-navy-400: #4c71bd;
+    --color-navy-500: #2c519f;
+    --color-navy-600: #1a3d80;
+    --color-navy-700: #0f2f6a;
+    --color-navy-800: #002561;
+    --color-navy-900: #001a45;
+}
+
+@layer base {
+    [x-cloak] { display: none !important; }
+
+    html { -webkit-tap-highlight-color: transparent; }
+
+    body { @apply bg-slate-50 text-slate-800 antialiased; }
+
+    h1, h2, h3 { @apply text-navy-800 font-bold; }
+
+    a { @apply text-esz-600 hover:text-esz-700; }
+
+    label { @apply text-sm font-medium text-slate-700; }
+
+    input[type='text'], input[type='email'], input[type='password'], input[type='number'], input[type='date'],
+    input[type='search'], input[type='tel'], input[type='url'], input[type='file'], select, textarea {
+        @apply mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-esz-500 focus:ring-esz-500 sm:text-sm;
+    }
+
+    input[type='checkbox'], input[type='radio'] {
+        @apply rounded border-slate-300 text-esz-600 focus:ring-esz-500;
+    }
+
+    input[type='radio'] { @apply rounded-full; }
+}
+
+
+/* Buttons als Utilities, damit sie per @apply kombinierbar sind */
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed no-underline;
+}
+@utility btn-primary { @apply btn bg-esz-600 text-white hover:bg-esz-700 hover:text-white focus-visible:ring-esz-500; }
+@utility btn-secondary { @apply btn bg-navy-800 text-white hover:bg-navy-700 hover:text-white focus-visible:ring-navy-500; }
+@utility btn-light { @apply btn bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 hover:text-slate-900; }
+@utility btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 hover:text-white focus-visible:ring-red-500; }
+@utility btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white focus-visible:ring-emerald-500; }
+@utility btn-sm { @apply px-2.5 py-1.5 text-xs; }
+@utility btn-lg { @apply px-6 py-3 text-base; }
+@utility card { @apply rounded-xl bg-white shadow-sm ring-1 ring-slate-200; }
+
+@layer components {
+
+
+    .table-wrap { @apply overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200; }
+    .table { @apply min-w-full divide-y divide-slate-200 text-sm; }
+    .table thead { @apply bg-slate-50; }
+    .table th { @apply px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 whitespace-nowrap; }
+    .table td { @apply px-3 py-2 align-middle; }
+    .table tbody { @apply divide-y divide-slate-100; }
+    .table tbody tr { @apply hover:bg-slate-50; }
+    .table tfoot { @apply bg-slate-50 font-semibold; }
+    .num { @apply text-right tabular-nums whitespace-nowrap; }
+
+    .field-error { @apply mt-1 text-sm text-red-600; }
+    .hint { @apply mt-1 text-xs text-slate-500; }
+}

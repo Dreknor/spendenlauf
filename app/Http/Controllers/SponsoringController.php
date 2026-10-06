@@ -2,137 +2,108 @@
 
 namespace App\Http\Controllers;
 
-use App\Model\Laeufer;
-use App\Model\Projects;
-use App\Model\Sponsor;
-use App\Model\Sponsoring;
-use App\Model\Teams;
+use App\Http\Requests\SponsoringRequest;
+use App\Models\Laeufer;
+use App\Models\Sponsor;
+use App\Models\Sponsoring;
+use App\Models\Teams;
+use App\Services\SpendenRechner;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
 
 class SponsoringController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->can('edit sponsorings')) {
-            $sponsorings = Sponsoring::orderByDesc('created_at')->get();
-        } else {
-            $sponsorings = auth()->user()->sponsorings->sortByDesc('created_at')->paginate(20);
-        }
+        $user = $request->user();
 
-        $sponsorings->load('sponsorable', 'sponsor', 'projects');
+        $sponsorings = Sponsoring::query()
+            ->with(['sponsorable', 'sponsor', 'projects'])
+            ->unless($user->can('edit sponsorings'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $user->id)
+                ->orWhereHasMorph('sponsorable', [Laeufer::class], fn ($l) => $l->where('verwaltet_von', $user->id))))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $suche = '%'.$request->input('q').'%';
+                $q->where(fn ($q) => $q
+                    ->whereHas('sponsor', fn ($s) => $s->where('nachname', 'like', $suche)->orWhere('vorname', 'like', $suche)->orWhere('firmenname', 'like', $suche))
+                    ->orWhereHasMorph('sponsorable', [Laeufer::class], fn ($l) => $l->where('nachname', 'like', $suche)->orWhere('vorname', 'like', $suche))
+                    ->orWhereHasMorph('sponsorable', [Teams::class], fn ($t) => $t->where('name', 'like', $suche)));
+            })
+            ->latest()
+            ->paginate(50)
+            ->withQueryString();
 
         return view('sponsorings.index', [
-            'sponsorings'   => $sponsorings,
-            'summe'         => $sponsorings->sum('spende'),
+            'sponsorings' => $sponsorings,
+            'bilanz' => SpendenRechner::fuer($this->event())->bilanz(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function create(Request $request)
     {
-        if (auth()->user()->can('edit laeufer')) {
-            $laeufer = Laeufer::orderBy('nachname')->get();
-        } else {
-            $laeufer = auth()->user()->laeufer()->orderBy('nachname')->get();
-        }
+        $event = $this->event();
+        $user = $request->user();
 
-        if (auth()->user()->can('edit sponsoren')) {
-            $sponsors = Sponsor::orderBy('nachname')->get();
-        } else {
-            $sponsors = auth()->user()->sponsoren()->orderBy('nachname')->get();
+        if (! $event->anmeldungOffen() && ! $user->can('edit sponsorings')) {
+            return $this->fehler('Für diesen Spendenlauf können keine Spenden mehr angelegt werden.', route('sponsorings.index'));
         }
-
-        if (auth()->user()->can('edit teams')) {
-            $teams = Teams::orderBy('name')->get();
-        } else {
-            //$teams = auth()->user()->teams()->orderBy('name')->get();
-            $teams = Teams::query()
-                ->where('verwaltet_von', auth()->user()->id)
-                ->orWhere('open', 1)
-                ->orderByDesc('open')
-                ->orderBy('name')
-                ->get();
-        }
-        $projects = Projects::all();
 
         return view('sponsorings.create', [
-            'laeufers'  => $laeufer->sortBy('nachname'),
-            'sponsors'  => $sponsors->sortBy('nachname'),
-            'projects'  => $projects,
-            'teams'     => $teams->sortBy('name'),
+            'event' => $event,
+            'laeufer' => Laeufer::query()
+                ->unless($user->can('edit laeufer'), fn ($q) => $q->where('verwaltet_von', $user->id))
+                ->orderBy('nachname')->orderBy('vorname')->get(),
+            'sponsoren' => Sponsor::query()
+                ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)))
+                ->orderBy('nachname')->orderBy('firmenname')->get(),
+            'teams' => Teams::query()
+                ->unless($user->can('edit teams'), fn ($q) => $q->where(fn ($q) => $q->where('verwaltet_von', $user->id)->orWhere('open', true)))
+                ->orderBy('name')->get(),
+            'projekte' => $event->projects()->orderBy('name')->get(),
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function store(SponsoringRequest $request)
     {
-        $sponsoring = new Sponsoring();
-        $sponsoring->fill($request->all());
-        $sponsoring->verwaltet_von = auth()->id();
-        $sponsoring->sponsor_id = $request->sponsor;
+        $event = $this->event();
+        $user = $request->user();
+        $daten = $request->validated();
 
-        if ($request->type == 'Team') {
-            $Team = Teams::find($request->team);
+        $sponsor = Sponsor::findOrFail($daten['sponsor_id']);
+        $this->authorize('view', $sponsor);
 
-            $sponsoring->sponsorable_id = $request->team;
-            $sponsoring->sponsorable_type = get_class($Team);
-        } else {
-            $Laeufer = Laeufer::find($request->laeufer);
+        $ziel = $daten['type'] === 'team'
+            ? Teams::findOrFail($daten['team_id'])
+            : Laeufer::findOrFail($daten['laeufer_id']);
 
-            $sponsoring->sponsorable_id = $request->laeufer;
-            $sponsoring->sponsorable_type = get_class($Laeufer);
+        if ($ziel instanceof Laeufer && ! $user->can('edit laeufer')) {
+            $this->authorize('view', $ziel);
+        }
+        if ($ziel instanceof Teams) {
+            $this->authorize('join', $ziel);
         }
 
+        $sponsoring = new Sponsoring([
+            'sponsor_id' => $sponsor->id,
+            'festBetrag' => $daten['festBetrag'] ?? 0,
+            'rundenBetrag' => $daten['rundenBetrag'] ?? 0,
+            'maxBetrag' => $daten['maxBetrag'] ?? null,
+        ]);
+        $sponsoring->verwaltet_von = $user->id;
+        $sponsoring->sponsorable()->associate($ziel);
         $sponsoring->save();
 
-        if (!is_null($request->projects) and count($request->projects) > 0) {
-            $sponsoring->projects()->sync($request->projects);
-        } else {
-            $sponsoring->projects()->sync(Projects::all());
-        }
+        $sponsoring->projects()->sync($daten['projects'] ?? $event->projects()->pluck('projects.id'));
+        SpendenRechner::vergessen();
 
-        return redirect(url('sponsorings'))->with([
-            'type'  => 'success',
-            'Meldung'   => __('Spende wurde erstellt'),
-        ]);
+        return $this->erfolg('Die Spende wurde angelegt.', $request->input('zurueck') ?: route('sponsorings.index'));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Model\Sponsoring  $sponsoring
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Sponsoring $sponsoring)
     {
-        if ($sponsoring->verwaltet_von == auth()->user()->id or auth()->user()->can('edit sponsorings')) {
-            $sponsoring->projects()->detach();
-            $sponsoring->delete();
+        $this->authorize('delete', $sponsoring);
 
-            return redirect()->back()->with([
-                'type'  => 'success',
-                'Meldung'  => __('Spende gelöscht'),
-            ]);
-        }
+        $sponsoring->projects()->detach();
+        $sponsoring->delete();
 
-        return redirect()->back()->with([
-            'type'  => 'danger',
-            'Meldung'  => __('Berechtigung fehlt'),
-        ]);
+        return $this->erfolg('Spende gelöscht.');
     }
 }

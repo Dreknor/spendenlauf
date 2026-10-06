@@ -5,37 +5,23 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class AddLaeuferToTeam extends Mailable
+class AddLaeuferToTeam extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $name;
+    public function __construct(public string $name, public string $laeufer, public string $team) {}
 
-    public $Laeufer;
-
-    public $Team;
-
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
-    public function __construct($name, $Laeufer, $Team)
+    public function envelope(): Envelope
     {
-        $this->Laeufer = $Laeufer;
-        $this->name = $name;
-        $this->Team = $Team;
+        return new Envelope(subject: 'Neue/r Läufer/in im Team '.$this->team);
     }
 
-    /**
-     * Build the message.
-     *
-     * @return $this
-     */
-    public function build()
+    public function content(): Content
     {
-        return $this->subject(__('neuer Läufer im Team'))->view('emails.addLaeuferToTeam');
+        return new Content(markdown: 'emails.team-neuer-laeufer');
     }
 }

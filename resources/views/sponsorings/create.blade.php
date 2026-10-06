@@ -1,166 +1,60 @@
-@extends('layouts.app')
+<x-layouts.app title="Spende eintragen">
+    <x-page-header title="Spende eintragen" subtitle="Ein Sponsor unterstützt einen Läufer oder ein Team." />
 
-@section('content')
-    <div class="container-fluid">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title">
-                    {{__('neue Spende erstellen')}}
-                </h5>
-                @if(config('spendenlauf.help_name') != "")
-                    <p>
-                        <small>
-                            {{config('spendenlauf.help_percent')}}% der Spenden werden für {{config('spendenlauf.help_name')}} genutzt.
-                        </small>
-                    </p>
+    <form method="POST" action="{{ route('sponsorings.store') }}"
+          x-data="{ type: @js(old('type', request('team') ? 'team' : 'laeufer')), fest: @js(old('festBetrag', '')), runde: @js(old('rundenBetrag', '')), max: @js(old('maxBetrag', '')), runden: 20,
+                    get beispiel() { let s = (parseFloat(this.fest) || 0) + (parseFloat(this.runde) || 0) * this.runden; const m = parseFloat(this.max) || 0; if (m > 0 && s > m) s = m; return s; } }"
+          class="grid gap-6 lg:grid-cols-3">
+        @csrf
+        <input type="hidden" name="zurueck" value="{{ request('laeufer') ? route('laeufer.edit', request('laeufer')) : '' }}">
+
+        <div class="space-y-6 lg:col-span-2">
+            <x-card title="Wer spendet?">
+                @if ($sponsoren->isEmpty())
+                    <p class="text-sm text-slate-600">Sie haben noch keine Sponsoren angelegt.</p>
+                @else
+                    <x-select name="sponsor_id" label="Sponsor" :options="$sponsoren->mapWithKeys(fn ($s) => [$s->id => $s->name.($s->ort ? ' ('.$s->ort.')' : '')])" :selected="request('sponsor')" placeholder="bitte wählen" required />
                 @endif
+                <a href="{{ route('sponsoren.create', ['weiter' => 'sponsoring', 'laeufer' => request('laeufer')]) }}" class="mt-3 inline-flex items-center gap-1 text-sm"><x-icon name="plus" class="size-4" /> neuen Sponsor anlegen</a>
+            </x-card>
 
-            </div>
-            <div class="card-body">
-                <form action="{{url('sponsorings')}}" class="form-horizontal" method="post">
-                    @csrf
-                    <div class="form-row">
-                        <label for="type">
-                            {{__('Spende für Team oder Läufer?')}}
-                        </label>
-                        <select class="custom-select" name="type" id="sponsoringType" required>
-                            <option disabled selected>{{__('bitte wählen')}}</option>
-                            <option value="Team">{{__('Team')}}</option>
-                            <option value="Laeufer">{{__('Einzelläufer')}}</option>
-                        </select>
-                    </div>
-                    <div class="form-row d-none" id="LaeuferOption">
-                        <label for="laeufernamen" class="label">{{__('Bitte Läufer auswählen')}}</label>
-                        <select class="custom-select empfaenger" name="laeufer"  >
-                            <option disabled selected>{{__('bitte wählen')}}</option>
-                        @foreach($laeufers as $laeufer)
-                                <option value="{{$laeufer->id}}">{{$laeufer->nachname}}, {{$laeufer->vorname}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-row d-none" id="TeamOption">
-                        <label for="team" class="label">{{__('Bitte Team auswählen')}}</label>
-                        <select class="custom-select empfaenger" name="team" id="team"  >
-                            <option disabled selected>{{__('bitte wählen')}}</option>
-                            @foreach($teams as $team)
-                                <option value="{{$team->id}}">{{$team->name}} @if($team->verwaltet_von != auth()->user()->id)(öffentliches Team - {{$team->laeufer->count()}} Läufer)@endif</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-row d-none" id="sponsorSelect">
-                        <label for="selectSponsor" class="label">{{__('Bitte Spender auswählen')}}</label>
-                        <select class="custom-select empfaenger" name="sponsor" id="selectSponsor" >
-                            <option disabled selected>{{__('bitte wählen')}}</option>
-                            @foreach($sponsors as $sponsor)
-                                <option value="{{$sponsor->id}}">{{!is_null($sponsor->firmenname )!= "" ? $sponsor->firmenname. " ($sponsor->nachname, $sponsor->vorname)" : $sponsor->nachname.", ".$sponsor->vorname}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-row mt-3 d-none sponsoring" id="betraege">
-                        <div class="row">
-                            <div class="col-md-4 col-sm-12">
-                                <label for="festBetrag" class="label">{{__('Festbetrag (in €)')}}</label>
-                                <input class="form-control moneyInput" type="number" name="festBetrag" min="0" step="0.10" id="festBetrag">
-                            </div>
+            <x-card title="Für wen?">
+                <div class="mb-4 flex gap-4 text-sm">
+                    <label class="flex items-center gap-2 font-normal"><input type="radio" name="type" value="laeufer" x-model="type"> einzelner Läufer</label>
+                    <label class="flex items-center gap-2 font-normal"><input type="radio" name="type" value="team" x-model="type"> Team</label>
+                </div>
+                <div x-show="type === 'laeufer'">
+                    <x-select name="laeufer_id" label="Läufer" :options="$laeufer->mapWithKeys(fn ($l) => [$l->id => $l->nachname.', '.$l->vorname.' (#'.$l->startnummer.')'])" :selected="request('laeufer')" placeholder="bitte wählen" />
+                </div>
+                <div x-show="type === 'team'" x-cloak>
+                    <x-select name="team_id" label="Team" :options="$teams->pluck('name', 'id')" :selected="request('team')" placeholder="bitte wählen" hint="Bei Team-Spenden zählen die Runden aller Teammitglieder." />
+                </div>
+            </x-card>
 
-                            <div class="col-md-4 col-sm-12">
-                                <label for="rundenBetrag" class="label">{{__('Betrag je Runde (in €)')}}</label>
-                                <input class="form-control moneyInput" type="number" name="rundenBetrag" min="0" step="0.10" id="rundenBetrag">
-                            </div>
-
-                            <div class="col-md-4 col-sm-12">
-                                <label for="maxBetrag" class="label">{{__('maximaler Betrag (Festbetrag + Rundenbetrag - in €)')}}</label>
-                                <input class="form-control moneyInput" type="number" name="maxBetrag" min="0" step="0.10" id="maxBetrag">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-row mt-3 pl-2 d-none sponsoring" >
-                        <div class="alert alert-info">
-                            <p>{{__('Es können ein oder mehrere Projekte ausgewählt werden. Wird kein Projekt ausgewählt, wird der Spendenbetrag auf alle Projekte aufgeteilt.')}}</p>
-                        </div>
-                        <label class="label" for="projects">{{__('Welche Projekte sollen gesponsert werden?')}}</label>
-                        @foreach($projects as $project)
-                            <div class="">
-                                <label class="form-check-label">
-                                    <input type="checkbox" id="{{$project->id}}" name="projects[]" value="{{$project->id}}">
-                                    {{$project->name}}
-                                </label>
-                            </div>
-                        @endforeach
-                        @if(config('spendenlauf.help_name') != "")
-                            <div class="">
-                                <label class="form-check-label">
-                                    Unterstützung {{config('spendenlauf.help_name')}}
-                                </label>
-                            </div>
-                        @endif
-
-                    </div>
-                    <div class="form-row">
-                        <button type="submit" class="btn btn-success btn-block collapse" id="btn-save">{{__('Spende anlegen')}}</button>
-                    </div>
-                </form>
-            </div>
+            <x-card title="Betrag">
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <x-input name="rundenBetrag" type="number" step="0.01" min="0" label="Betrag je Runde (€)" x-model="runde" />
+                    <x-input name="festBetrag" type="number" step="0.01" min="0" label="Festbetrag (€)" x-model="fest" />
+                    <x-input name="maxBetrag" type="number" step="0.01" min="0" label="Höchstbetrag (€)" x-model="max" hint="optional" />
+                </div>
+                <p class="mt-4 rounded-lg bg-navy-50 p-3 text-sm text-navy-800">
+                    Beispiel: Bei <input type="number" min="0" x-model.number="runden" class="mx-1 inline-block! w-16! py-0.5! text-sm" aria-label="Runden"> Runden
+                    ergibt das <strong x-text="window.euro(Math.round(beispiel * 100))"></strong>.
+                </p>
+            </x-card>
         </div>
-    </div>
 
-
-@endsection
-
-@push('js')
-    <script>
-        $('#sponsoringType').change(function(){
-            $('#sponsoringType option:selected').each(function(){
-                if($(this).val() == "Team"){
-                    $('#TeamOption').removeClass('d-none');
-                    $('#TeamOption').addClass('d-block');
-                    $('#LaeuferOption').addClass('d-none');
-                    $('#LaeuferOption').removeClass('d-block');
-
-                } else if($(this).val() == "Laeufer") {
-                    $('#LaeuferOption').removeClass('d-none');
-                    $('#LaeuferOption').addClass('d-block');
-
-                    $('#TeamOption').addClass('d-none');
-                    $('#TeamOption').removeClass('d-block');
-                }
-            });
-        });
-
-        $('.empfaenger').change(function(){
-            $('.empfaenger option:selected').each(function(){
-                $('#sponsorSelect').removeClass('d-none');
-                $('#sponsorSelect').addClass('d-block');
-            });
-        });
-
-        $('#selectSponsor').change(function(){
-            console.log('hallo');
-            $('#selectSponsor option:selected').each(function(){
-                $('.sponsoring').removeClass('d-none');
-                $('.sponsoring').addClass('d-block');
-            });
-        });
-
-    </script>
-    <script>
-        $(document).ready(function () {
-
-
-            $("input").change(function() {
-                checkChanged();
-            });
-
-            function checkChanged() {
-
-                if (!$('#maxBetrag').val() && !$('#rundenBetrag').val() && !$('#festBetrag').val()) {
-                    $("#btn-save").hide();
-                } else {
-                    $("#btn-save").show();
-                }
-            }
-        });
-
-    </script>
-
-@endpush
+        <div class="space-y-6">
+            <x-card title="Projekte">
+                <p class="mb-3 text-sm text-slate-600">Welche Projekte sollen unterstützt werden? Ohne Auswahl wird gleichmäßig auf alle Projekte verteilt.</p>
+                <div class="space-y-2">
+                    @foreach ($projekte as $p)
+                        <x-checkbox name="projects[]" :value="(string) $p->id" :label="$p->name" />
+                    @endforeach
+                </div>
+                @include('partials.verteilung-hinweis', ['event' => $event])
+            </x-card>
+            <button type="submit" class="btn-primary btn-lg w-full">Spende speichern</button>
+        </div>
+    </form>
+</x-layouts.app>
