@@ -33,6 +33,12 @@ return [
         'reload_sekunden' => (int) env('STATS_RELOAD', 60),
     ],
 
+    // Höchstbeträge für Zusagen über den öffentlichen Sponsor-Link (höhere Spenden erfasst das Orga-Team)
+    'oeffentlich' => [
+        'max_betrag' => (int) env('SPENDENLAUF_OEFFENTLICH_MAX_BETRAG', 1000),
+        'max_runde' => (int) env('SPENDENLAUF_OEFFENTLICH_MAX_RUNDE', 25),
+    ],
+
     // Grenze für den vereinfachten Spendennachweis (§ 50 Abs. 4 EStDV)
     'nachweis_grenze_cent' => 30000,
 

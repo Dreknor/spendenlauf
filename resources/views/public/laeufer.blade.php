@@ -41,9 +41,9 @@
                         @csrf
                         <x-honeypot />
                         <div class="grid gap-4 sm:grid-cols-3">
-                            <x-input name="rundenBetrag" type="number" step="0.01" min="0" label="je Runde (€)" x-model="runde" placeholder="z. B. 1,00" />
-                            <x-input name="festBetrag" type="number" step="0.01" min="0" label="und/oder fest (€)" x-model="fest" />
-                            <x-input name="maxBetrag" type="number" step="0.01" min="0" label="höchstens (€)" x-model="max" hint="optional" />
+                            <x-input name="rundenBetrag" type="number" step="0.01" min="0" :max="config('spendenlauf.oeffentlich.max_runde')" label="je Runde (€)" x-model="runde" placeholder="z. B. 1,00" />
+                            <x-input name="festBetrag" type="number" step="0.01" min="0" :max="config('spendenlauf.oeffentlich.max_betrag')" label="und/oder fest (€)" x-model="fest" />
+                            <x-input name="maxBetrag" type="number" step="0.01" min="0" :max="config('spendenlauf.oeffentlich.max_betrag')" label="höchstens (€)" x-model="max" hint="optional" />
                         </div>
                         <p class="rounded-lg bg-navy-50 p-3 text-sm text-navy-800" x-show="beispiel > 0" x-cloak>
                             Bei 20 Runden wären das <strong x-text="window.euro(Math.round(beispiel * 100))"></strong>.
@@ -66,7 +66,7 @@
                         <x-checkbox name="datenschutz">
                             <x-slot:label>Ich bin mit der Verarbeitung meiner Daten zur Abwicklung des Spendenlaufs gemäß <a href="{{ config('spendenlauf.datenschutz_link') }}" target="_blank" rel="noopener">Datenschutzerklärung</a> einverstanden.</x-slot:label>
                         </x-checkbox>
-                        <p class="text-xs text-slate-500">Nach dem Lauf erhalten Sie eine E-Mail mit dem erlaufenen Betrag und den Zahlungsinformationen. Sie zahlen erst dann.</p>
+                        <p class="text-xs text-slate-500">Sie erhalten zuerst eine E-Mail, mit der Sie Ihre Zusage bestätigen. Nach dem Lauf folgt eine E-Mail mit dem erlaufenen Betrag und den Zahlungsinformationen – Sie zahlen erst dann.</p>
                         <button type="submit" class="btn-primary btn-lg w-full">Spende zusagen</button>
                     </form>
                 </x-card>

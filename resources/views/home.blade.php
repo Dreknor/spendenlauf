@@ -36,6 +36,22 @@
             </x-card>
         @endif
 
+        @if ($einladungen->isNotEmpty())
+            <x-card title="Einladungen zur Mitverwaltung" subtitle="Nehmen Sie eine Einladung an, sehen und bearbeiten Sie den Läufer gemeinsam mit der einladenden Person." class="mt-6">
+                <ul class="space-y-2 text-sm">
+                    @foreach ($einladungen as $einladung)
+                        <li class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-navy-50 p-3 ring-1 ring-navy-100">
+                            <span><strong>{{ $einladung->einlader?->name ?? 'Ein Elternteil' }}</strong> lädt Sie ein, <strong>{{ $einladung->laeufer->name }}</strong> mitzuverwalten.</span>
+                            <span class="flex gap-2">
+                                <form method="POST" action="{{ route('mitverwaltung.einladung.annehmen', $einladung) }}">@csrf<button class="btn-success btn-sm">Annehmen</button></form>
+                                <form method="POST" action="{{ route('mitverwaltung.einladung.ablehnen', $einladung) }}">@csrf<button class="btn-light btn-sm">Ablehnen</button></form>
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </x-card>
+        @endif
+
         @if ($eigeneAnfragen->isNotEmpty())
             <div class="mt-6 rounded-lg bg-navy-50 p-4 text-sm text-navy-800 ring-1 ring-navy-100">
                 Ihre Anfrage zur Mitverwaltung von {{ $eigeneAnfragen->map(fn ($a) => $a->laeufer?->name)->filter()->join(', ') }} wartet noch auf Bestätigung.

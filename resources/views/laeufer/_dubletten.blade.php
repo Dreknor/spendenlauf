@@ -20,14 +20,20 @@
         </p>
         <ul class="mt-3 space-y-2">
             @foreach ($treffer as $t)
-                @php $l = $laeuferListe->get($t['id']); @endphp
+                @php
+                    $l = $laeuferListe->get($t['id']);
+                    // Angaben zu Kindern anderer Familien (Jahrgang, Klasse, Team) nur für eigene Läufer und das Orga-Team
+                    $details = $l && ($l->istVerwaltetVon(auth()->user()) || auth()->user()->can('edit laeufer'));
+                @endphp
                 @continue(! $l)
                 <li class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-3 text-sm ring-1 ring-amber-100">
                     <div>
                         <span class="font-semibold">{{ $l->name }}</span>
-                        @if ($l->geburtsdatum) · geb. {{ $l->geburtsdatum->format('Y') }}@endif
-                        @if ($l->schulklasse) · Klasse {{ $l->schulklasse->name }}@endif
-                        @if ($l->team) · Team {{ $l->team->name }}@endif
+                        @if ($details)
+                            @if ($l->geburtsdatum) · geb. {{ $l->geburtsdatum->format('Y') }}@endif
+                            @if ($l->schulklasse) · Klasse {{ $l->schulklasse->name }}@endif
+                            @if ($l->team) · Team {{ $l->team->name }}@endif
+                        @endif
                         <x-badge :color="$t['grad'] === 'sicher' ? 'red' : 'amber'">{{ $t['grad'] === 'sicher' ? 'gleich' : 'ähnlich' }}</x-badge>
                         <p class="text-xs text-slate-500">
                             @if ($l->istVerwaltetVon(auth()->user()))
@@ -59,7 +65,7 @@
         </ul>
         @if ($modus === 'anmeldung')
             <p class="mt-3 text-xs text-amber-900">
-                Mit der Mitverwaltung sehen und bearbeiten Sie den bereits angemeldeten Läufer gemeinsam – der Elternteil, der ihn angemeldet hat, muss die Anfrage bestätigen.
+                Mit der Mitverwaltung sehen und bearbeiten Sie den bereits angemeldeten Läufer gemeinsam – der Elternteil, der ihn angemeldet hat, muss die Anfrage bestätigen. Ist es nicht Ihr Kind, fragen Sie bitte nicht an: Bei ähnlichen Namen können Sie unten bestätigen, dass es eine andere Person ist, sonst hilft Ihnen das Orga-Team.
                 @unless (session('dubletten_uebergehbar'))
                     Eine zweite Anmeldung derselben Person ist nicht möglich.
                 @endunless

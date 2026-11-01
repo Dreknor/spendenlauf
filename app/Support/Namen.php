@@ -19,6 +19,12 @@ class Namen
         return preg_replace('/[^a-z0-9]/', '', $name);
     }
 
+    /** „Lindenstraße 3“, „Lindenstrasse 3“ und „Lindenstr. 3“ → „lindenstr3“. */
+    public static function strasse(?string $strasse): string
+    {
+        return str_replace('strasse', 'str', self::normalisiere($strasse));
+    }
+
     /** Ähnlichkeit zweier normalisierter Namen: gleich, Abkürzung (Max/Maximilian) oder kleiner Tippfehler. */
     public static function aehnlich(string $a, string $b, int $toleranz = 2): bool
     {

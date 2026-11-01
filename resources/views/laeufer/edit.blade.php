@@ -109,12 +109,33 @@
                 @endif
 
                 @can('update', $laeufer)
+                    @if ($laeufer->mitverwaltungEinladungen->isNotEmpty())
+                        <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Eingeladen</p>
+                        <ul class="mt-2 space-y-2 text-sm">
+                            @foreach ($laeufer->mitverwaltungEinladungen as $einladung)
+                                <li class="flex items-center justify-between gap-2">
+                                    <span>{{ $einladung->email }} <span class="text-xs text-slate-400">seit {{ $einladung->created_at->format('d.m.') }}</span></span>
+                                    <form method="POST" action="{{ route('mitverwaltung.einladung.zurueckziehen', $einladung) }}">
+                                        @csrf @method('DELETE')
+                                        <button class="text-xs text-red-600 hover:underline">zurückziehen</button>
+                                    </form>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
                     <form method="POST" action="{{ route('mitverwaltung.hinzufuegen', $laeufer) }}" class="mt-4 flex items-end gap-2">
                         @csrf
-                        <x-input name="email" type="email" label="Weiteres Konto hinzufügen" placeholder="E-Mail-Adresse des Kontos" class="flex-1" />
-                        <button type="submit" class="btn-light">Hinzufügen</button>
+                        <x-input name="email" type="email" :label="auth()->user()->can('edit laeufer') ? 'Weiteres Konto zuordnen' : 'Weiteres Konto einladen'" placeholder="E-Mail-Adresse" class="flex-1" />
+                        <button type="submit" class="btn-light">{{ auth()->user()->can('edit laeufer') ? 'Zuordnen' : 'Einladen' }}</button>
                     </form>
-                    <p class="hint">Die Person muss bereits ein Konto haben.</p>
+                    <p class="hint">
+                        @can('edit laeufer')
+                            Ordnet ein vorhandenes Konto direkt zu.
+                        @else
+                            Die Person erhält eine E-Mail und verwaltet erst mit, wenn sie die Einladung mit einem Konto zu dieser Adresse annimmt.
+                        @endcan
+                    </p>
                 @endcan
             </x-card>
 

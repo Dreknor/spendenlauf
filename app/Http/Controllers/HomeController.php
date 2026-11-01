@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Laeufer;
 use App\Models\MitverwaltungAnfrage;
+use App\Models\MitverwaltungEinladung;
 use App\Models\Teams;
 use App\Services\SpendenRechner;
 use App\Support\CurrentEvent;
@@ -52,6 +53,11 @@ class HomeController extends Controller
                 ->with(['laeufer', 'user'])
                 ->get(),
             'eigeneAnfragen' => MitverwaltungAnfrage::where('user_id', $user->id)->where('status', MitverwaltungAnfrage::OFFEN)->with('laeufer')->get(),
+            // Einladungen anderer Konten an meine E-Mail-Adresse
+            'einladungen' => MitverwaltungEinladung::fuer($user)->offen()
+                ->whereHas('laeufer', fn ($q) => $q->where('event_id', $event->id))
+                ->with(['laeufer', 'einlader'])
+                ->get(),
         ]);
     }
 }

@@ -16,6 +16,9 @@
                 <button class="btn-light">Aktualisieren</button>
             </form>
         @endif
+        @if (config('queue.default') === 'sync' && $empfaenger->count() > 20)
+            <p class="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Die Mails werden ohne Warteschlange direkt beim Absenden verschickt. Bei vielen Empfängern kann das Zeitlimit des Servers greifen – dann einfach erneut absenden, bereits versandte Mails werden übersprungen. Besser: <code>QUEUE_CONNECTION=database</code> in der <code>.env</code> (siehe README).</p>
+        @endif
         @if (blank($event->iban) && blank($event->paypal_me_name))
             <p class="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">Für die Veranstaltung sind keine Bankdaten hinterlegt. <a href="{{ route('events.edit', $event) }}">Jetzt ergänzen</a></p>
         @endif

@@ -16,8 +16,13 @@ class PublicSponsorRequest extends FormRequest
     public function rules(): array
     {
         $istFirma = $this->input('anrede') === 'Firma';
+        $maxBetrag = config('spendenlauf.oeffentlich.max_betrag');
 
-        return array_merge([
+        return array_merge(SponsoringRequest::betragsRegeln(), [
+            // Niedrigere Grenzen als für angemeldete Benutzer: keine absurden Zusagen in der Live-Statistik
+            'festBetrag' => ['nullable', 'numeric', 'min:0', 'max:'.$maxBetrag],
+            'rundenBetrag' => ['nullable', 'numeric', 'min:0', 'max:'.config('spendenlauf.oeffentlich.max_runde')],
+            'maxBetrag' => ['nullable', 'numeric', 'min:0', 'max:'.$maxBetrag],
             'anrede' => ['required', Rule::in(['Herr', 'Frau', 'Firma'])],
             'vorname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
             'nachname' => ['nullable', Rule::requiredIf(! $istFirma), 'string', 'max:190'],
@@ -30,7 +35,14 @@ class PublicSponsorRequest extends FormRequest
             'datenschutz' => ['accepted'],
             // Ohne dieses Feld überspringt der Honeypot seine Prüfung – Bots könnten ihn so einfach umgehen
             config('honeypot.valid_from_field_name', 'valid_from') => config('honeypot.enabled') && config('honeypot.valid_from_timestamp') ? ['required'] : [],
-        ], SponsoringRequest::betragsRegeln());
+        ]);
+    }
+
+    public function messages(): array
+    {
+        $hinweis = 'Über dieses Formular sind höchstens :max € möglich. Für eine höhere Spende wenden Sie sich bitte direkt an das Orga-Team.';
+
+        return ['festBetrag.max' => $hinweis, 'rundenBetrag.max' => $hinweis, 'maxBetrag.max' => $hinweis];
     }
 
     public function withValidator(Validator $validator): void

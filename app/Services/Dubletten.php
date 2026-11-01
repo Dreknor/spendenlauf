@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Erkennt doppelt angelegte Läufer und Sponsoren.
  *
- * „sicher“: gleicher (normalisierter) Name und gleiches Geburtsdatum bzw. gleiche E-Mail.
+ * „sicher“: gleicher (normalisierter) Name und gleiches Geburtsdatum, bei Sponsoren gleiche E-Mail
+ * oder gleicher Name mit gleicher Anschrift.
  * „ähnlich“: Abkürzung, Umlaut-Schreibweise oder kleiner Tippfehler – muss bestätigt werden.
  */
 class Dubletten
@@ -113,7 +114,8 @@ class Dubletten
     // ---------------------------------------------------------------------
 
     /**
-     * Sucht einen bereits vorhandenen Sponsor: zuerst über die E-Mail, dann über Name/Firma + PLZ.
+     * Sucht einen bereits vorhandenen Sponsor: zuerst über die E-Mail, dann über Name/Firma + Anschrift.
+     * Gleicher Name in derselben PLZ reicht nicht – zwei „Anna Schmidt“ im selben Ort sind verschiedene Personen.
      */
     public static function vorhandenerSponsor(array $daten): ?Sponsor
     {
@@ -160,7 +162,7 @@ class Dubletten
         foreach ($gruppen as $gruppe) {
             $gruppe = $gruppe->values();
             for ($i = 0; $i < $gruppe->count(); $i++) {
-                $schluessel = self::sponsorSchluessel($gruppe[$i]->only(['vorname', 'nachname', 'firmenname', 'email']));
+                $schluessel = self::sponsorSchluessel($gruppe[$i]->only(self::SPONSOR_FELDER));
                 for ($j = $i + 1; $j < $gruppe->count(); $j++) {
                     $a = $gruppe[$i];
                     $b = $gruppe[$j];
@@ -174,12 +176,15 @@ class Dubletten
         return $paare->sortBy(fn ($p) => $p['grad'] === self::SICHER ? 0 : 1)->values();
     }
 
-    /** @return array{name: string, vor: string, nach: string, firma: string, email: string} */
+    private const SPONSOR_FELDER = ['vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz'];
+
+    /** @return array{name: string, vor: string, nach: string, firma: string, email: string, anschrift: string} */
     private static function sponsorSchluessel(array $daten): array
     {
         $vor = Namen::normalisiere($daten['vorname'] ?? '');
         $nach = Namen::normalisiere($daten['nachname'] ?? '');
         $firma = Namen::normalisiere($daten['firmenname'] ?? '');
+        $strasse = Namen::strasse($daten['strasse'] ?? '');
 
         return [
             'name' => $vor.$nach ?: $firma,
@@ -187,12 +192,13 @@ class Dubletten
             'nach' => $nach,
             'firma' => $firma,
             'email' => mb_strtolower(trim((string) ($daten['email'] ?? ''))),
+            'anschrift' => $strasse !== '' ? trim((string) ($daten['plz'] ?? '')).'|'.$strasse : '',
         ];
     }
 
     private static function sponsorGrad(array $neu, Sponsor $s): ?string
     {
-        $alt = self::sponsorSchluessel($s->only(['vorname', 'nachname', 'firmenname', 'email']));
+        $alt = self::sponsorSchluessel($s->only(self::SPONSOR_FELDER));
 
         if ($neu['email'] !== '' && $neu['email'] === $alt['email']) {
             return self::SICHER;
@@ -200,9 +206,11 @@ class Dubletten
 
         // Zwei verschiedene, bekannte E-Mail-Adressen sprechen für verschiedene Personen
         $emailWiderspruch = $neu['email'] !== '' && $alt['email'] !== '';
+        $anschriftGleich = $neu['anschrift'] !== '' && $neu['anschrift'] === $alt['anschrift'];
 
+        // Gleicher Name ist nur mit gleicher Anschrift sicher dieselbe Person – sonst nachfragen
         if ($neu['name'] === $alt['name'] && $neu['firma'] === $alt['firma']) {
-            return $emailWiderspruch ? self::AEHNLICH : self::SICHER;
+            return $anschriftGleich && ! $emailWiderspruch ? self::SICHER : self::AEHNLICH;
         }
 
         $firmaPasst = ($neu['firma'] === '' && $alt['firma'] === '') || Namen::aehnlich($neu['firma'], $alt['firma']);

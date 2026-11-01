@@ -60,9 +60,10 @@ class LaeuferUebernehmen
             $neu->schulklasse_id = $this->nachfolgeKlasse($alt, $klassen)?->id;
             $neu->save();
 
-            // Mitverwalter (z. B. zweiter Elternteil) und den ausführenden Benutzer mitnehmen
+            // Mitverwalter (z. B. zweiter Elternteil) mitnehmen – den ausführenden Benutzer nur, wenn er den
+            // Läufer schon verwaltet hat (das Orga-Team wird beim Übernehmen nicht zum Mitverwalter)
             $mitverwalter = $alt->mitverwalter()->pluck('users.id')
-                ->push($besitzer->id)
+                ->when($alt->istVerwaltetVon($besitzer), fn ($ids) => $ids->push($besitzer->id))
                 ->reject(fn ($id) => (int) $id === (int) $neu->verwaltet_von)
                 ->unique();
             $neu->mitverwalter()->sync($mitverwalter);

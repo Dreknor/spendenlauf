@@ -2,6 +2,7 @@
 
 use App\Enums\MailTyp;
 use App\Enums\ZahlungsStatus;
+use App\Jobs\SponsorMailVersenden;
 use App\Mail\SponsorZahlungsaufforderung;
 use App\Models\Laeufer;
 use App\Models\Sponsoring;
@@ -10,6 +11,7 @@ use App\Models\Zahlung;
 use App\Services\SpendenRechner;
 use App\Services\SponsorAbrechnung;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     $this->event = aktivesEvent(['datum' => now()->subDays(2)->toDateString(), 'paypal_me_name' => 'Foerderverein']);
@@ -46,11 +48,50 @@ it('versendet Zahlungsaufforderungen nur einmal und protokolliert sie', function
 
     $this->actingAs($this->kasse)->post(route('abrechnung.mails.senden'), ['typ' => 'aufforderung', 'sponsoren' => [$this->sponsor->id]])->assertRedirect();
 
-    Mail::assertQueued(SponsorZahlungsaufforderung::class, fn ($m) => $m->hasTo($this->sponsor->email) && $m->typ === MailTyp::Aufforderung);
-    expect(SponsorMail::count())->toBe(1);
+    Mail::assertSent(SponsorZahlungsaufforderung::class, fn ($m) => $m->hasTo($this->sponsor->email) && $m->typ === MailTyp::Aufforderung);
+    expect(SponsorMail::sole()->event_id)->toBe($this->event->id);
 
     // Vorschau zeigt den Sponsor jetzt nicht mehr als Empfänger einer Aufforderung
     $this->actingAs($this->kasse)->get(route('abrechnung.mails', ['typ' => 'aufforderung']))->assertSee('Keine passenden Empfänger');
+
+    // Doppelt abgeschicktes Formular (oder Neustart nach Abbruch): keine zweite Mail
+    $this->actingAs($this->kasse)->post(route('abrechnung.mails.senden'), ['typ' => 'aufforderung', 'sponsoren' => [$this->sponsor->id]]);
+    Mail::assertSentCount(1);
+
+    // Ausdrücklicher Einzelversand geht trotzdem
+    $this->actingAs($this->kasse)->post(route('abrechnung.mail', $this->sponsor), ['typ' => 'aufforderung'])->assertSessionHas('type', 'success');
+    Mail::assertSentCount(2);
+});
+
+it('reiht den Massenversand in die Warteschlange ein und prüft erst beim Versand', function () {
+    Queue::fake();
+
+    $this->actingAs($this->kasse)->post(route('abrechnung.mails.senden'), ['typ' => 'erinnerung', 'sponsoren' => [$this->sponsor->id]])
+        ->assertSessionHas('type', 'success');
+
+    Queue::assertPushed(SponsorMailVersenden::class, fn ($job) => $job->sponsor->is($this->sponsor) && $job->typ === MailTyp::Erinnerung);
+    expect(SponsorMail::count())->toBe(0);
+
+    // Inzwischen bezahlt → der Auftrag verschickt nichts mehr
+    Mail::fake();
+    Zahlung::factory()->create(['event_id' => $this->event->id, 'sponsor_id' => $this->sponsor->id, 'betrag' => 25]);
+    SpendenRechner::vergessen();
+    (new SponsorMailVersenden($this->sponsor, $this->event, MailTyp::Erinnerung))->handle();
+
+    Mail::assertNothingSent();
+});
+
+it('schickt Erinnerungen höchstens einmal am Tag', function () {
+    Mail::fake();
+    $senden = fn () => (new SponsorMailVersenden($this->sponsor, $this->event, MailTyp::Erinnerung))->handle();
+
+    $senden();
+    $senden();
+    Mail::assertSentCount(1);
+
+    $this->travel(SponsorMailVersenden::SPERRE_STUNDEN + 1)->hours();
+    $senden();
+    Mail::assertSentCount(2);
 });
 
 it('rendert die Zahlungsaufforderung mit Betrag, Bankdaten und Links', function () {

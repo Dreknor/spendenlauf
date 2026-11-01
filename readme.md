@@ -19,11 +19,13 @@ php artisan test
 
 **Mails lokal:** Mit Laragon läuft [Mailpit](http://localhost:8025) – in der `.env` `MAIL_MAILER=smtp`, `MAIL_HOST=127.0.0.1`, `MAIL_PORT=1025` setzen, dann landen alle Mails (Zahlungsaufforderungen, Bestätigungen, …) dort statt bei echten Empfängern.
 
-Für den automatischen Runden-Import am Lauftag (und die tägliche Update-Prüfung) muss der Scheduler laufen (Cronjob):
+Auf dem Server muss der Scheduler laufen (Cronjob) – für den automatischen Runden-Import am Lauftag, den Mailversand, das Löschen unbestätigter Spendenzusagen und die tägliche Update-Prüfung:
 
 ```
 * * * * * cd /pfad/zum/projekt && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+**Mails und Warteschlange:** Mit `QUEUE_CONNECTION=database` (Standard in `.env.example`) werden Mails in die Warteschlange gestellt und vom Scheduler jede Minute versandt – ein dauerhaft laufender Queue-Worker ist nicht nötig, kann aber zusätzlich laufen (`php artisan queue:work`). Fehlgeschlagene Mails werden zweimal wiederholt und landen danach in `failed_jobs` (`php artisan queue:failed`). Mit `QUEUE_CONNECTION=sync` gehen Mails sofort beim Absenden raus; das ist nur lokal sinnvoll, denn beim Massenversand an viele Sponsoren kann das Zeitlimit des Webservers greifen.
 
 Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, Frontend-Build, Migrationen, Caches) – oder bequem über den Online-Updater.
 
@@ -50,21 +52,21 @@ Voraussetzungen auf dem Server: Der Webserver-Benutzer muss das Projektverzeichn
 ## Ablauf eines Spendenlaufs
 
 1. **Vorbereiten** – *Verwaltung → Veranstaltungen → Neuen Lauf vorbereiten*. Einstellungen werden vom letzten Lauf übernommen, Klassen werden auf Wunsch hochgestuft (5a → 7a bei zwei Jahren Abstand). Projekte auswählen, Bankdaten, PayPal.me-Name, Prozentsätze für soziale Abgabe und Klassenkasse prüfen und den Lauf **aktivieren**.
-2. **Anmeldung** – Eltern registrieren sich, melden sich und ihre Kinder an (Kategorie, bei Schülern die Klasse). Läufer vom letzten Lauf können mit einem Klick übernommen werden. Jeder Läufer hat einen persönlichen **Sponsor-Link**, über den Sponsoren selbst Spenden zusagen.
+2. **Anmeldung** – Eltern registrieren sich, melden sich und ihre Kinder an (Kategorie, bei Schülern die Klasse). Läufer vom letzten Lauf können mit einem Klick übernommen werden. Jeder Läufer hat einen persönlichen **Sponsor-Link**, über den Sponsoren selbst Spenden zusagen. Die Zusage zählt erst, wenn der Sponsor sie über den Link in einer Bestätigungsmail bestätigt (Double-Opt-in, 7 Tage gültig; unbestätigte Angaben werden danach gelöscht). Über den Link sind höchstens 1.000 € fest bzw. 25 € je Runde möglich (`SPENDENLAUF_OEFFENTLICH_MAX_BETRAG`, `SPENDENLAUF_OEFFENTLICH_MAX_RUNDE`).
 3. **Lauftag** –
    - *Schnellerfassung*: Läufer, Startnummer, Sponsoren, Spenden und Barzahlungen in einem Schritt.
    - *Runden eingeben*: manuelle Eingabe/Korrektur per Startnummer.
    - *Runden importieren*: automatisch alle 5 Minuten von der Ergebnisseite der Zeitmessung (Import-URL am Event) oder per CSV/Excel-Upload. Manuell eingegebene Runden werden dabei nicht überschrieben.
    - *Startnummern*: Pool der vorgedruckten Nummern.
-4. **Abrechnung** – Zahlungsaufforderungen per Mail (Aufstellung, Bankverbindung, Verwendungszweck mit Sponsor-Nr., PayPal.me-Link, Link zur persönlichen Sponsor-Seite), Zahlungseingänge erfassen, Erinnerungen an offene Posten, vereinfachter Spendennachweis (≤ 300 €) als PDF, Export der Spenden über 300 € für Zuwendungsbestätigungen.
+4. **Abrechnung** – Zahlungsaufforderungen per Mail (über die Warteschlange; wer eine Aufforderung schon erhalten hat bzw. heute schon erinnert wurde, wird beim Massenversand übersprungen) (Aufstellung, Bankverbindung, Verwendungszweck mit Sponsor-Nr., PayPal.me-Link, Link zur persönlichen Sponsor-Seite), Zahlungseingänge erfassen, Erinnerungen an offene Posten, vereinfachter Spendennachweis (≤ 300 €) als PDF, Export der Spenden über 300 € für Zuwendungsbestätigungen.
 5. **Auswertung** – Statistiken nach Läufern, Teams, Altersgruppen, Geschlecht, Kategorie, Klassen/Stufen, Sponsoren, Verteilung und Jahresvergleich; Excel- und PDF-Export; Klassenauswertung (PDF je Klasse für die Klassenleitungen); öffentliche Live-Statistik unter `/stats` (einbettbar, `/stats/embed` ohne Kopf/Fuß).
 
 ## Doppelte Einträge
 
 - **Läufer:** Bei jeder Anmeldung (Eltern, Schnellerfassung, Übernahme aus dem Vorjahr) wird nach bereits angemeldeten Läufern gesucht – unabhängig von Groß-/Kleinschreibung, Umlaut-Schreibweise (ä/ae, ß/ss), Leerzeichen, Abkürzungen (Max/Maximilian) und kleinen Tippfehlern (`app/Services/Dubletten.php`). Gleicher Name und gleiches Geburtsdatum blockieren die Anmeldung (nur das Orga-Team kann übergehen), bei ähnlichen Namen kann bestätigt werden, dass es eine andere Person ist.
-- **Mitverwaltung:** Ist ein Kind schon vom anderen Elternteil angemeldet, wird statt einer zweiten Anmeldung die Mitverwaltung angefragt. Der anmeldende Elternteil (oder das Orga-Team) bestätigt auf der Startseite; das Orga-Team kann weitere Konten auch direkt zuordnen.
-- **Sponsoren** sind gemeinsame Datensätze: Gibt es die E-Mail-Adresse (oder Name + PLZ) schon, wird der vorhandene Sponsor verwendet; bei ähnlichen Namen wird nachgefragt. Eltern sehen bei gemeinsamen Sponsoren nur die Spenden für ihre eigenen Läufer. Anschrift, E-Mail und Telefon sieht und ändert nur, wer den Sponsor zuerst erfasst hat (bzw. das Orga-Team) – sonst könnte jeder mit einer bekannten E-Mail-Adresse die Kontaktdaten auslesen oder Zahlungs-Mails umleiten.
-- **Bereinigung:** *Verwaltung → Doppelte Einträge* listet mögliche Dubletten. Beim Zusammenführen werden Spenden, Zahlungen, Mails, Verwalter und fehlende Angaben übernommen; Paare können als „keine Dublette“ markiert werden.
+- **Mitverwaltung:** Ist ein Kind schon vom anderen Elternteil angemeldet, wird statt einer zweiten Anmeldung die Mitverwaltung angefragt – nur für Läufer, auf die die eigene Anmeldung gestoßen ist. Der anmeldende Elternteil (oder das Orga-Team) bestätigt auf der Startseite. Klasse, Team und Jahrgang fremder Kinder werden dabei nicht angezeigt. Eltern können weitere Konten per E-Mail einladen; die eingeladene Person muss die Einladung mit einem Konto zu dieser Adresse annehmen (30 Tage gültig). Nur das Orga-Team ordnet Konten direkt zu.
+- **Sponsoren** sind gemeinsame Datensätze: Gibt es die E-Mail-Adresse (oder Name mit gleicher Anschrift – „Str.“ und „Straße“ gelten als gleich) schon, wird der vorhandene Sponsor verwendet. Bei gleichem Namen mit anderer Straße oder ähnlichen Namen wird nachgefragt; Sponsor-Link und Schnellerfassung legen dann einen neuen Sponsor an, den das Orga-Team bei Bedarf zusammenführt. Eltern sehen bei gemeinsamen Sponsoren nur die Spenden für ihre eigenen Läufer. Anschrift, E-Mail und Telefon sieht und ändert nur, wer den Sponsor zuerst erfasst hat (bzw. das Orga-Team) – sonst könnte jeder mit einer bekannten E-Mail-Adresse die Kontaktdaten auslesen oder Zahlungs-Mails umleiten.
+- **Bereinigung:** *Verwaltung → Doppelte Einträge* listet mögliche Dubletten. Beim Zusammenführen werden Spenden, Zahlungen, Mails, Verwalter und fehlende Angaben übernommen; Paare können als „keine Dublette“ markiert werden. Bei Läufern gehören Startnummer und Runden zusammen (die Zeitmessung zählt pro Nummer): Haben beide eine Startnummer, wählt das Orga-Team, welche bleibt (Vorschlag: die mit den meisten Runden). Die andere Nummer wird wieder frei – außer darauf wurden schon Runden gezählt, dann bleibt sie gesperrt, damit kein neuer Läufer diese Runden erbt.
 
 ## Berechnung
 

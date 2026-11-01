@@ -137,6 +137,7 @@ it('verschickt keine Zahlungsaufforderung an Sponsoren ohne offenen Betrag', fun
     $this->actingAs(admin())->post(route('abrechnung.mails.senden'), ['typ' => 'erinnerung', 'sponsoren' => [$sponsoring->sponsor_id]]);
 
     Mail::assertNothingQueued();
+    Mail::assertNothingSent();
 });
 
 it('begrenzt soziale Abgabe und Klassenkasse zusammen auf 100 %', function () {

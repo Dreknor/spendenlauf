@@ -8,6 +8,7 @@ use App\Models\Sponsor;
 use App\Services\Dubletten;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
 
 /**
  * Liste möglicher Dubletten für das Orga-Team, mit Zusammenführen und „keine Dublette“.
@@ -31,9 +32,17 @@ class DublettenController extends Controller
         abort_unless($request->user()->can('edit laeufer'), 403);
 
         [$behalten, $entfernen] = $this->paar($request, Laeufer::class);
-        $ergebnis = $aktion->laeufer($behalten, $entfernen);
+        $startnummer = $request->validate(['startnummer' => ['nullable', 'integer']])['startnummer'] ?? null;
 
-        return $this->erfolg("Läufer zusammengeführt: {$ergebnis->name} (Startnummer {$ergebnis->startnummer}).", route('dubletten.index', ['art' => 'laeufer']));
+        try {
+            $ergebnis = $aktion->laeufer($behalten, $entfernen, $startnummer !== null ? (int) $startnummer : null);
+        } catch (InvalidArgumentException $e) {
+            return $this->fehler($e->getMessage());
+        }
+
+        $meldung = "Läufer zusammengeführt: {$ergebnis->name} (Startnummer ".($ergebnis->startnummer ?? '–').", {$ergebnis->runden} Runden).";
+
+        return $this->erfolg(trim($meldung.' '.implode(' ', $aktion->hinweise)), route('dubletten.index', ['art' => 'laeufer']));
     }
 
     public function sponsoren(Request $request, Zusammenfuehren $aktion)

@@ -51,6 +51,21 @@
                                 </label>
                             @endforeach
                         </div>
+                        @if ($istLaeufer && $p['a']->startnummer && $p['b']->startnummer)
+                            @php $vorschlag = \App\Actions\Zusammenfuehren::nummerQuelle($p['a'], $p['b']); @endphp
+                            <fieldset class="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
+                                <legend class="font-medium text-slate-700">Startnummer und Runden übernehmen von</legend>
+                                <div class="mt-1 flex flex-wrap gap-4">
+                                    @foreach ([$p['a'], $p['b']] as $e)
+                                        <label class="flex items-center gap-2 font-normal">
+                                            <input type="radio" name="startnummer" value="{{ $e->startnummer }}" @checked($e->is($vorschlag))>
+                                            Nr. {{ $e->startnummer }} ({{ $e->runden }} Runden)
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <p class="hint">Die Zeitmessung zählt pro Startnummer – behalten Sie die Nummer, die der Läufer trägt. Die andere Nummer wird wieder frei, sofern darauf noch keine Runden gezählt wurden.</p>
+                            </fieldset>
+                        @endif
                         <button type="submit" class="btn-primary btn-sm mt-3">Ausgewählten behalten und zusammenführen</button>
                     </form>
                 </div>

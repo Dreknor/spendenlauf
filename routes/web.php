@@ -45,6 +45,9 @@ Route::get('laeufer/public/{uuid}', [PublicSponsorController::class, 'show'])->n
 Route::post('laeufer/public/{uuid}', [PublicSponsorController::class, 'store'])
     ->middleware(['throttle:10,1', ProtectAgainstSpam::class])
     ->name('public.sponsor.store');
+// Bestätigungslink aus der Mail (signiert, zeitlich begrenzt)
+Route::get('spende/bestaetigen/{zusage}', [PublicSponsorController::class, 'bestaetigung'])->whereNumber('zusage')->name('public.sponsor.bestaetigung');
+Route::post('spende/bestaetigen/{zusage}', [PublicSponsorController::class, 'bestaetigen'])->whereNumber('zusage')->middleware('throttle:10,1')->name('public.sponsor.bestaetigen');
 
 // Persönliche Seite eines Sponsors (Link aus der Zahlungsaufforderung)
 Route::get('sponsor/{uuid}', [SponsorPortalController::class, 'show'])->name('public.sponsor.konto');
@@ -67,11 +70,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('laeufer/{laeufer}/bescheinigung', [LaeuferController::class, 'bescheinigung'])->name('laeufer.bescheinigung');
 
     // Mitverwaltung (z. B. zweiter Elternteil)
-    Route::post('laeufer/{laeufer}/mitverwaltung', [MitverwaltungController::class, 'anfragen'])->name('mitverwaltung.anfragen');
-    Route::post('laeufer/{laeufer}/mitverwalter', [MitverwaltungController::class, 'hinzufuegen'])->name('mitverwaltung.hinzufuegen');
+    Route::post('laeufer/{laeufer}/mitverwaltung', [MitverwaltungController::class, 'anfragen'])->middleware('throttle:10,1')->name('mitverwaltung.anfragen');
+    Route::post('laeufer/{laeufer}/mitverwalter', [MitverwaltungController::class, 'hinzufuegen'])->middleware('throttle:10,1')->name('mitverwaltung.hinzufuegen');
     Route::delete('laeufer/{laeufer}/mitverwalter/{user}', [MitverwaltungController::class, 'entfernen'])->name('mitverwaltung.entfernen');
     Route::post('mitverwaltung/{anfrage}/annehmen', [MitverwaltungController::class, 'annehmen'])->name('mitverwaltung.annehmen');
     Route::post('mitverwaltung/{anfrage}/ablehnen', [MitverwaltungController::class, 'ablehnen'])->name('mitverwaltung.ablehnen');
+    Route::post('mitverwaltung/einladung/{einladung}/annehmen', [MitverwaltungController::class, 'einladungAnnehmen'])->name('mitverwaltung.einladung.annehmen');
+    Route::post('mitverwaltung/einladung/{einladung}/ablehnen', [MitverwaltungController::class, 'einladungAblehnen'])->name('mitverwaltung.einladung.ablehnen');
+    Route::delete('mitverwaltung/einladung/{einladung}', [MitverwaltungController::class, 'einladungZurueckziehen'])->name('mitverwaltung.einladung.zurueckziehen');
 
     Route::resource('teams', TeamsController::class)->parameters(['teams' => 'team']);
     Route::resource('sponsoren', SponsorController::class)->parameters(['sponsoren' => 'sponsor'])->except('destroy');

@@ -6,7 +6,7 @@ use App\Enums\MailTyp;
 use App\Enums\ZahlungsArt;
 use App\Enums\ZahlungsStatus;
 use App\Exports\TabellenExport;
-use App\Mail\SponsorZahlungsaufforderung;
+use App\Jobs\SponsorMailVersenden;
 use App\Models\Event;
 use App\Models\Sponsor;
 use App\Models\SponsorMail;
@@ -17,7 +17,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -100,18 +99,22 @@ class AbrechnungController extends Controller
             $anzahl += $this->senden($sponsor, $event, $typ) ? 1 : 0;
         }
 
-        return $this->erfolg("$anzahl {$typ->label()}(en) wurden versandt.", route('abrechnung.index'));
+        $meldung = $this->ueberWarteschlange()
+            ? "$anzahl {$typ->label()}(en) werden jetzt im Hintergrund versandt – in der Regel innerhalb weniger Minuten."
+            : "$anzahl {$typ->label()}(en) wurden versandt.";
+
+        return $this->erfolg($meldung.' Wer die Mail bereits erhalten hat, wird übersprungen.', route('abrechnung.index'));
     }
 
     public function mailSenden(Request $request, Sponsor $sponsor)
     {
         $typ = MailTyp::tryFrom($request->input('typ', 'aufforderung')) ?? MailTyp::Aufforderung;
 
-        if (! $this->senden($sponsor, $this->event(), $typ)) {
+        if (! $this->senden($sponsor, $this->event(), $typ, erneut: true)) {
             return $this->fehler('Der Sponsor hat keine E-Mail-Adresse oder keine offene Spende.');
         }
 
-        return $this->erfolg($typ->label().' wurde an '.$sponsor->email.' versandt.');
+        return $this->erfolg($typ->label().' an '.$sponsor->email.($this->ueberWarteschlange() ? ' wird versandt.' : ' wurde versandt.'));
     }
 
     public function nachweis(Sponsor $sponsor)
@@ -193,24 +196,20 @@ class AbrechnungController extends Controller
             ->values();
     }
 
-    private function senden(Sponsor $sponsor, Event $event, MailTyp $typ): bool
+    /** Reiht die Mail ein, falls sie fällig ist (der Auftrag prüft vor dem Versand noch einmal). */
+    private function senden(Sponsor $sponsor, Event $event, MailTyp $typ, bool $erneut = false): bool
     {
-        $abrechnung = SponsorAbrechnung::fuer($sponsor, $event);
-
-        // Keine Aufforderung/Erinnerung an Sponsoren ohne Spende oder ohne offenen Betrag
-        if (blank($sponsor->email) || $abrechnung->konto->sollCent === 0 || $abrechnung->konto->offenCent() <= 0) {
+        if (! SponsorMailVersenden::faellig($sponsor, $event, $typ, $erneut)) {
             return false;
         }
 
-        Mail::to($sponsor->email)->queue(new SponsorZahlungsaufforderung($sponsor, $event, $typ));
-
-        SponsorMail::create([
-            'sponsor_id' => $sponsor->id,
-            'typ' => $typ,
-            'betrag' => $abrechnung->konto->offenCent() / 100,
-            'gesendet_am' => now(),
-        ]);
+        SponsorMailVersenden::dispatch($sponsor, $event, $typ, $erneut);
 
         return true;
+    }
+
+    private function ueberWarteschlange(): bool
+    {
+        return config('queue.default') !== 'sync';
     }
 }

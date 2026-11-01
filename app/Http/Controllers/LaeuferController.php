@@ -120,7 +120,8 @@ class LaeuferController extends Controller
         $event = $this->event();
 
         $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor.users', 'sponsorings.projects', 'besitzer', 'mitverwalter',
-            'mitverwaltungAnfragen' => fn ($q) => $q->where('status', MitverwaltungAnfrage::OFFEN)->with('user')]);
+            'mitverwaltungAnfragen' => fn ($q) => $q->where('status', MitverwaltungAnfrage::OFFEN)->with('user'),
+            'mitverwaltungEinladungen' => fn ($q) => $q->offen()->oldest()]);
         $rechner = SpendenRechner::fuer($event);
 
         return view('laeufer.edit', [
@@ -290,6 +291,8 @@ class LaeuferController extends Controller
         if ($kandidaten->isEmpty()) {
             return null;
         }
+
+        MitverwaltungController::kandidatenMerken($request, $kandidaten->pluck('laeufer.id'));
 
         $sicher = $kandidaten->contains('grad', Dubletten::SICHER);
         $darfUebergehen = ! $sicher || $request->user()->can('edit laeufer');

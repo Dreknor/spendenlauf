@@ -109,6 +109,11 @@ class Laeufer extends Model
         return $this->hasMany(MitverwaltungAnfrage::class);
     }
 
+    public function mitverwaltungEinladungen(): HasMany
+    {
+        return $this->hasMany(MitverwaltungEinladung::class);
+    }
+
     /** Läufer, die der Benutzer angemeldet hat oder mitverwaltet. */
     public function scopeVerwaltetVon(Builder $query, User $user): Builder
     {

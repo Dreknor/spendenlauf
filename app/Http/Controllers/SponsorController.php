@@ -55,7 +55,7 @@ class SponsorController extends Controller
         $daten = $request->validated();
         $user = $request->user();
 
-        // Gleicher Sponsor (E-Mail oder gleicher Name + PLZ) → vorhandenen Datensatz verwenden
+        // Gleicher Sponsor (E-Mail oder gleicher Name + Anschrift) → vorhandenen Datensatz verwenden
         $sponsor = Dubletten::vorhandenerSponsor($daten);
         $meldung = $sponsor ? "„{$sponsor->name}“ war bereits als Sponsor erfasst und wurde Ihnen zugeordnet." : null;
 

@@ -2,8 +2,10 @@
 
 namespace App\Actions;
 
+use App\Models\Event;
 use App\Models\Laeufer;
 use App\Models\MitverwaltungAnfrage;
+use App\Models\MitverwaltungEinladung;
 use App\Models\Sponsor;
 use App\Models\Sponsoring;
 use App\Models\SponsorMail;
@@ -24,25 +26,52 @@ class Zusammenfuehren
 
     private const SPONSOR_FELDER = ['anrede', 'vorname', 'nachname', 'firmenname', 'email', 'strasse', 'plz', 'ort', 'telefon'];
 
-    public function laeufer(Laeufer $behalten, Laeufer $entfernen): Laeufer
+    /** @var list<string> Hinweise zum letzten Zusammenführen von Läufern (Startnummern, nicht übernommene Runden) */
+    public array $hinweise = [];
+
+    /**
+     * Läufer zusammenführen. Startnummer und Runden gehören zusammen, weil die Zeitmessung pro Startnummer
+     * zählt: Übernommen werden Nummer und Runden des Läufers, dessen Nummer behalten wird ($startnummer,
+     * sonst die Nummer mit den meisten Runden). Die andere Nummer kommt zurück in den Pool – außer es wurden
+     * darauf schon Runden gezählt: Dann bleibt sie gesperrt, damit ein neuer Läufer nicht diese Runden erbt.
+     */
+    public function laeufer(Laeufer $behalten, Laeufer $entfernen, ?int $startnummer = null): Laeufer
     {
         if ($behalten->is($entfernen) || $behalten->event_id !== $entfernen->event_id) {
             throw new InvalidArgumentException('Es können nur zwei verschiedene Läufer derselben Veranstaltung zusammengeführt werden.');
         }
 
-        DB::transaction(function () use ($behalten, $entfernen) {
+        DB::transaction(function () use ($behalten, $entfernen, $startnummer) {
+            // Nicht gleichzeitig mit Startnummernvergabe und Runden-Import (beide sperren dieselben Zeilen)
+            Event::whereKey($behalten->event_id)->lockForUpdate()->first();
+            Laeufer::withoutGlobalScope('event')->whereKey([$behalten->id, $entfernen->id])->lockForUpdate()->get();
+            $behalten->refresh();
+            $entfernen->refresh();
+
+            $quelle = self::nummerQuelle($behalten, $entfernen, $startnummer);
+            $andere = $quelle->is($behalten) ? $entfernen : $behalten;
+            $verworfen = $andere->startnummer;
+            $sperren = $verworfen !== null && $andere->runden > 0;
+
+            // Runden hängen an der Startnummer; hat nur einer eine Nummer, zählen die meisten (z. B. manuell erfassten) Runden
+            $rundenQuelle = $verworfen === null && $andere->runden > $quelle->runden ? $andere : $quelle;
+            $rundenVerworfen = ($rundenQuelle->is($quelle) ? $andere : $quelle)->runden;
+
             foreach (self::LAEUFER_FELDER as $feld) {
                 if (blank($behalten->{$feld}) && filled($entfernen->{$feld})) {
                     $behalten->{$feld} = $entfernen->{$feld};
                 }
             }
 
-            // Wer mehr Runden hat, ist vermutlich mit der „richtigen“ Startnummer gelaufen
-            if ($entfernen->runden > $behalten->runden) {
-                $behalten->runden = $entfernen->runden;
-                $behalten->runden_manuell = $entfernen->runden_manuell;
-                $behalten->runden_aktualisiert_am = $entfernen->runden_aktualisiert_am;
-            }
+            $behalten->runden = $rundenQuelle->runden;
+            $behalten->runden_manuell = $rundenQuelle->runden_manuell;
+            $behalten->runden_aktualisiert_am = $rundenQuelle->runden_aktualisiert_am;
+
+            // Nummern umhängen (eindeutig je Veranstaltung): erst beim entfernten Läufer freimachen
+            $nummer = $quelle->startnummer;
+            $entfernen->startnummer = null;
+            $entfernen->saveQuietly();
+            $behalten->startnummer = $nummer;
 
             Sponsoring::forEvent($behalten->event_id)
                 ->where('sponsorable_type', $entfernen->getMorphClass())
@@ -58,24 +87,55 @@ class Zusammenfuehren
             $behalten->mitverwalter()->syncWithoutDetaching($verwalter->all());
 
             MitverwaltungAnfrage::where('laeufer_id', $entfernen->id)->delete();
-
-            $nummer = $entfernen->startnummer;
-            $entfernen->startnummer = null;
-            $entfernen->saveQuietly();
-            $entfernen->delete();
+            MitverwaltungEinladung::where('laeufer_id', $entfernen->id)->delete();
 
             $behalten->save();
 
-            if ($nummer !== null && $nummer !== $behalten->startnummer) {
-                (new Startnummernvergabe($behalten->event))->freigeben($nummer);
+            // Gesperrte Nummer bleibt beim gelöschten Läufer stehen – die Vergabe zählt gelöschte Läufer mit
+            if ($sperren) {
+                $entfernen->startnummer = $verworfen;
+                $entfernen->saveQuietly();
+            } elseif ($verworfen !== null) {
+                (new Startnummernvergabe($behalten->event))->freigeben($verworfen);
             }
+            $entfernen->delete();
 
-            Log::info('Läufer zusammengeführt', ['behalten' => $behalten->id, 'entfernt' => $entfernen->id, 'startnummer_frei' => $nummer]);
+            $this->hinweise = array_values(array_filter([
+                $sperren ? "Startnummer $verworfen bleibt gesperrt, weil darauf schon Runden gezählt wurden." : null,
+                ! $sperren && $verworfen !== null ? "Startnummer $verworfen ist wieder frei." : null,
+                $rundenVerworfen > 0 ? "$rundenVerworfen Runden des anderen Eintrags wurden nicht übernommen." : null,
+            ]));
+
+            Log::info('Läufer zusammengeführt', [
+                'behalten' => $behalten->id, 'entfernt' => $entfernen->id, 'startnummer' => $nummer,
+                'startnummer_verworfen' => $verworfen, 'gesperrt' => $sperren, 'runden_verworfen' => $rundenVerworfen,
+            ]);
         });
 
         SpendenRechner::vergessen();
 
         return $behalten->fresh();
+    }
+
+    /**
+     * Läufer, dessen Startnummer (und damit dessen Runden) erhalten bleibt: die gewünschte Nummer,
+     * sonst die mit den meisten Runden, bei Gleichstand die des behaltenen Läufers.
+     */
+    public static function nummerQuelle(Laeufer $behalten, Laeufer $entfernen, ?int $startnummer = null): Laeufer
+    {
+        if ($startnummer !== null) {
+            return match ($startnummer) {
+                $behalten->startnummer => $behalten,
+                $entfernen->startnummer => $entfernen,
+                default => throw new InvalidArgumentException("Die Startnummer $startnummer gehört zu keinem der beiden Läufer."),
+            };
+        }
+
+        if (($behalten->startnummer === null) !== ($entfernen->startnummer === null)) {
+            return $behalten->startnummer !== null ? $behalten : $entfernen;
+        }
+
+        return $entfernen->runden > $behalten->runden ? $entfernen : $behalten;
     }
 
     public function sponsor(Sponsor $behalten, Sponsor $entfernen): Sponsor
