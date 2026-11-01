@@ -12,8 +12,9 @@ class SponsorPolicy
         return $user->can('edit sponsoren') || $user->can('manage abrechnung') || $sponsor->wirdVerwaltetVon($user);
     }
 
+    /** Kontaktdaten (Anschrift, E-Mail, Telefon) sehen und ändern. */
     public function update(User $user, Sponsor $sponsor): bool
     {
-        return $user->can('edit sponsoren') || $sponsor->wirdVerwaltetVon($user);
+        return $user->can('edit sponsoren') || $sponsor->istErfasstVon($user);
     }
 }

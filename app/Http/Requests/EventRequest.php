@@ -31,7 +31,8 @@ class EventRequest extends FormRequest
             'soziale_abgabe_prozent' => ['required', 'numeric', 'min:0', 'max:100'],
             'soziale_abgabe_empfaenger' => ['nullable', 'required_unless:soziale_abgabe_prozent,0', 'string', 'max:190'],
             'soziale_abgabe_beschreibung' => ['nullable', 'string', 'max:2000'],
-            'klassenkasse_prozent' => ['required', 'numeric', 'min:0', 'max:100'],
+            // Beide Anteile werden vom Brutto abgezogen – zusammen höchstens 100 %, sonst erhielten die Projekte negative Beträge
+            'klassenkasse_prozent' => ['required', 'numeric', 'min:0', 'max:'.max(0, 100 - (float) $this->input('soziale_abgabe_prozent'))],
             'kontoinhaber' => ['nullable', 'string', 'max:190'],
             'iban' => ['nullable', 'string', 'max:34', 'regex:/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/'],
             'bic' => ['nullable', 'string', 'max:11'],

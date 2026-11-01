@@ -16,6 +16,7 @@ use App\Models\Zahlung;
 use App\Services\SpendenRechner;
 use App\Support\CurrentEvent;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -26,6 +27,12 @@ use Spatie\Permission\Models\Permission;
 class DemoSeeder extends Seeder
 {
     public function run(): void
+    {
+        // Eine Transaktion statt mehrerer hundert Einzel-Commits (auf MySQL mit sync_binlog sonst > 1 Minute)
+        DB::transaction(fn () => $this->anlegen());
+    }
+
+    private function anlegen(): void
     {
         $admin = User::firstOrCreate(['email' => 'demo-admin@example.org'], [
             'vorname' => 'Demo', 'nachname' => 'Admin', 'password' => 'password', 'email_verified_at' => now(),

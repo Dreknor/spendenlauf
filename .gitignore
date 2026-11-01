@@ -20,3 +20,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Einstellungen der Entwicklungsumgebung (PhpStorm) gehören nicht ins Repository
+/.idea

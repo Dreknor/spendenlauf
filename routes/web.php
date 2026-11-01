@@ -22,6 +22,7 @@ use App\Http\Controllers\StartnummerController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SucheController;
 use App\Http\Controllers\TeamsController;
+use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ZahlungController;
 use Illuminate\Support\Facades\Route;
@@ -159,6 +160,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('export/laeufer', [ExportController::class, 'laeufer'])->name('export.laeufer');
         Route::get('export/sponsoren', [ExportController::class, 'sponsoren'])->name('export.sponsoren');
         Route::get('export/projekte', [ExportController::class, 'projekte'])->name('export.projekte');
+    });
+
+    // Online-Updater (die Pfade bleiben im Wartungsmodus erreichbar, siehe bootstrap/app.php)
+    Route::middleware('permission:system update')->prefix('verwaltung/update')->name('updates.')->controller(UpdateController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('pruefen', 'pruefen')->name('pruefen');
+        Route::post('starten', 'starten')->name('starten');
+        Route::get('status', 'status')->name('status');
     });
 
     // Interne JSON-Endpunkte für Suchfelder (Schnellerfassung, Rundeneingabe)

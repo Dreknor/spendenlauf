@@ -28,6 +28,8 @@ class PublicSponsorRequest extends FormRequest
             'ort' => ['required', 'string', 'max:190'],
             'telefon' => ['nullable', 'string', 'max:50'],
             'datenschutz' => ['accepted'],
+            // Ohne dieses Feld überspringt der Honeypot seine Prüfung – Bots könnten ihn so einfach umgehen
+            config('honeypot.valid_from_field_name', 'valid_from') => config('honeypot.enabled') && config('honeypot.valid_from_timestamp') ? ['required'] : [],
         ], SponsoringRequest::betragsRegeln());
     }
 

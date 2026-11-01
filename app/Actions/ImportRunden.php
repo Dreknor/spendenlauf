@@ -70,9 +70,11 @@ class ImportRunden
     public function uebernehmen(array $datensaetze): array
     {
         $ergebnis = ['aktualisiert' => 0, 'unveraendert' => 0, 'uebersprungen' => [], 'unbekannt' => [], 'zeilen' => count($datensaetze)];
-        $laeufer = Laeufer::forEvent($this->event)->whereNotNull('startnummer')->get()->keyBy('startnummer');
+        DB::transaction(function () use ($datensaetze, &$ergebnis) {
+            // Innerhalb der Transaktion gesperrt laden: eine gleichzeitige manuelle Eingabe darf nicht
+            // mit einem veralteten Stand überschrieben werden
+            $laeufer = Laeufer::forEvent($this->event)->whereNotNull('startnummer')->lockForUpdate()->get()->keyBy('startnummer');
 
-        DB::transaction(function () use ($datensaetze, $laeufer, &$ergebnis) {
             foreach ($datensaetze as $satz) {
                 $l = $laeufer->get($satz['startnummer']);
 

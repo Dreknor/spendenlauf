@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Laeufer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,9 +30,25 @@ class RundenController extends Controller
             'modus' => ['nullable', 'in:setzen,addieren'],
         ]);
 
-        $laeufer = Laeufer::where('startnummer', $daten['startnummer'])->first();
+        // Gesperrt lesen und schreiben: zwei Helfer, die gleichzeitig Runden addieren, dürfen sich nicht überschreiben
+        $ergebnis = DB::transaction(function () use ($daten) {
+            $laeufer = Laeufer::where('startnummer', $daten['startnummer'])->lockForUpdate()->first();
 
-        if (! $laeufer) {
+            if (! $laeufer) {
+                return null;
+            }
+
+            $vorher = $laeufer->runden;
+            $neu = ($daten['modus'] ?? 'setzen') === 'addieren' ? $vorher + $daten['runden'] : $daten['runden'];
+            $laeufer->runden = max(0, $neu);
+            $laeufer->runden_manuell = true;
+            $laeufer->runden_aktualisiert_am = now();
+            $laeufer->save();
+
+            return [$laeufer, $vorher];
+        });
+
+        if (! $ergebnis) {
             $meldung = "Startnummer {$daten['startnummer']} ist keinem Läufer zugeordnet.";
 
             return $request->expectsJson()
@@ -39,12 +56,7 @@ class RundenController extends Controller
                 : $this->fehler($meldung);
         }
 
-        $vorher = $laeufer->runden;
-        $neu = ($daten['modus'] ?? 'setzen') === 'addieren' ? $vorher + $daten['runden'] : $daten['runden'];
-        $laeufer->runden = max(0, $neu);
-        $laeufer->runden_manuell = true;
-        $laeufer->runden_aktualisiert_am = now();
-        $laeufer->save();
+        [$laeufer, $vorher] = $ergebnis;
 
         Log::info('Runden manuell geändert', [
             'startnummer' => $laeufer->startnummer, 'vorher' => $vorher, 'nachher' => $laeufer->runden, 'user' => $request->user()->id,

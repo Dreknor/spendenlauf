@@ -5,6 +5,7 @@ use App\Models\Projects;
 use App\Models\Sponsor;
 use App\Models\Sponsoring;
 use App\Models\User;
+use Spatie\Honeypot\EncryptedTime;
 
 beforeEach(function () {
     $this->event = aktivesEvent();
@@ -16,6 +17,8 @@ function sponsorFormular(array $extra = []): array
     return array_merge([
         'anrede' => 'Frau', 'vorname' => 'Erika', 'nachname' => 'Mustermann', 'email' => 'erika@example.org',
         'strasse' => 'Hauptstr. 1', 'plz' => '01445', 'ort' => 'Radebeul', 'rundenBetrag' => '1.50', 'datenschutz' => '1',
+        // Honeypot-Felder wie im echten Formular
+        'my_name_test' => '', 'valid_from' => (string) EncryptedTime::create(now()->subMinute()),
     ], $extra);
 }
 
@@ -60,6 +63,15 @@ it('blockiert Bots über das Honeypot-Feld', function () {
     config(['honeypot.randomize_name_field_name' => false]);
 
     $this->post(route('public.sponsor.store', $this->laeufer->uuid), sponsorFormular(['my_name' => 'bot']));
+
+    expect(Sponsoring::count())->toBe(0);
+});
+
+it('blockiert Bots, die die Honeypot-Felder weglassen', function () {
+    $formular = sponsorFormular();
+    unset($formular['my_name_test'], $formular['valid_from']);
+
+    $this->post(route('public.sponsor.store', $this->laeufer->uuid), $formular)->assertSessionHasErrors('valid_from');
 
     expect(Sponsoring::count())->toBe(0);
 });

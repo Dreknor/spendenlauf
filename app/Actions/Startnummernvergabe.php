@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\Event;
 use App\Models\Laeufer;
 use App\Models\Startnummer;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -40,6 +41,17 @@ class Startnummernvergabe
      * Weist dem Läufer eine Startnummer zu (Wunschnummer oder nächste freie) und entfernt sie aus dem Pool.
      */
     public function vergeben(Laeufer $laeufer, ?int $wunsch = null): int
+    {
+        return DB::transaction(function () use ($laeufer, $wunsch) {
+            // Mehrere Anmeldetische gleichzeitig: Vergabe pro Veranstaltung nacheinander abarbeiten,
+            // sonst erhalten zwei Läufer dieselbe Nummer (Sperre hält bis zum Ende der äußeren Transaktion)
+            Event::whereKey($this->event->id)->lockForUpdate()->first();
+
+            return $this->zuweisen($laeufer, $wunsch);
+        });
+    }
+
+    private function zuweisen(Laeufer $laeufer, ?int $wunsch): int
     {
         if ($wunsch !== null) {
             if (! $this->istFrei($wunsch, $laeufer)) {

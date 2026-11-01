@@ -60,6 +60,13 @@ class LaeuferUebernehmen
             $neu->schulklasse_id = $this->nachfolgeKlasse($alt, $klassen)?->id;
             $neu->save();
 
+            // Mitverwalter (z. B. zweiter Elternteil) und den ausführenden Benutzer mitnehmen
+            $mitverwalter = $alt->mitverwalter()->pluck('users.id')
+                ->push($besitzer->id)
+                ->reject(fn ($id) => (int) $id === (int) $neu->verwaltet_von)
+                ->unique();
+            $neu->mitverwalter()->sync($mitverwalter);
+
             $vergabe->vergeben($neu);
 
             return $neu;

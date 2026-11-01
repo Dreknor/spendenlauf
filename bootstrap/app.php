@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SicherheitsHeader;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        $middleware->web(append: [SicherheitsHeader::class]);
         $middleware->redirectUsersTo('/home');
+        // Der Online-Updater muss seinen Fortschritt auch während des Wartungsmodus anzeigen können
+        $middleware->preventRequestsDuringMaintenance(except: ['verwaltung/update', 'verwaltung/update/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);

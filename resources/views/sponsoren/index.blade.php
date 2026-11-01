@@ -18,7 +18,7 @@
                     <tr>
                         <td><a href="{{ route('sponsoren.edit', $s) }}" class="font-medium">{{ $s->name }}</a></td>
                         <td class="text-slate-600">{{ trim($s->plz.' '.$s->ort) ?: '–' }}</td>
-                        <td class="text-slate-600">{{ $s->email ?? '–' }}</td>
+                        <td class="text-slate-600">@can('update', $s){{ $s->email ?? '–' }}@else–@endcan</td>
                         <td class="num">{{ $s->sponsorings_count }}</td>
                         <td class="num">{{ euro($summen[$s->id] ?? 0) }}</td>
                     </tr>

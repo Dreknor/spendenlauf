@@ -4,11 +4,15 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 
 /** @extends Factory<User> */
 class UserFactory extends Factory
 {
     protected $model = User::class;
+
+    /** Einmal gehasht statt bei jedem Benutzer (bcrypt kostet je ~0,3 s). */
+    protected static ?string $password = null;
 
     public function definition(): array
     {
@@ -17,7 +21,7 @@ class UserFactory extends Factory
             'nachname' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => 'password',
+            'password' => static::$password ??= Hash::make('password'),
         ];
     }
 

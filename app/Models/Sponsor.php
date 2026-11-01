@@ -29,7 +29,7 @@ class Sponsor extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)->withPivot('id');
     }
 
     public function sponsorings(): HasMany
@@ -88,5 +88,23 @@ class Sponsor extends Model
     public function wirdVerwaltetVon(?User $user): bool
     {
         return $user !== null && $this->users->contains('id', $user->id);
+    }
+
+    /**
+     * Wer den Sponsor zuerst erfasst hat, pflegt seine Kontaktdaten. Weitere Familien, die über
+     * E-Mail oder Name + PLZ demselben Sponsor zugeordnet wurden, dürfen nur Spenden eintragen –
+     * sonst könnte jeder mit einer bekannten E-Mail-Adresse Anschrift und Mail-Empfänger ändern.
+     */
+    public function istErfasstVon(?User $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        $ersterId = $this->relationLoaded('users')
+            ? $this->users->sortBy('pivot.id')->first()?->id
+            : $this->users()->orderBy('sponsor_user.id')->value('users.id');
+
+        return (int) $ersterId === (int) $user->id;
     }
 }

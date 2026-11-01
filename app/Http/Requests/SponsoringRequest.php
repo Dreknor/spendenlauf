@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\CurrentEvent;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class SponsoringRequest extends FormRequest
@@ -30,7 +32,8 @@ class SponsoringRequest extends FormRequest
             $praefix.'rundenBetrag' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             $praefix.'maxBetrag' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             $praefix.'projects' => ['nullable', 'array'],
-            $praefix.'projects.*' => ['integer', 'exists:projects,id'],
+            // nur Projekte der aktuellen Veranstaltung
+            $praefix.'projects.*' => ['integer', Rule::exists('event_projects', 'projects_id')->where('event_id', app(CurrentEvent::class)->get()?->id)],
         ];
     }
 

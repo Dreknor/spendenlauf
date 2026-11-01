@@ -9,7 +9,7 @@ Verwaltung des Spendenlaufs des Evangelischen Schulzentrums Radebeul: Anmeldung 
 ```bash
 composer install
 npm install
-cp .env.example .env   # Datenbank und Mail eintragen
+cp .env.example .env   # Datenbank und Mail eintragen; lokal: APP_ENV=local, APP_DEBUG=true, SESSION_SECURE_COOKIE=false
 php artisan key:generate
 php artisan migrate
 php artisan db:seed     # nur lokal: Demo-Lauf mit Testdaten, Login demo-admin@example.org / password
@@ -17,13 +17,35 @@ npm run build           # oder: npm run dev
 php artisan test
 ```
 
-Für den automatischen Runden-Import am Lauftag muss der Scheduler laufen (Cronjob):
+**Mails lokal:** Mit Laragon läuft [Mailpit](http://localhost:8025) – in der `.env` `MAIL_MAILER=smtp`, `MAIL_HOST=127.0.0.1`, `MAIL_PORT=1025` setzen, dann landen alle Mails (Zahlungsaufforderungen, Bestätigungen, …) dort statt bei echten Empfängern.
+
+Für den automatischen Runden-Import am Lauftag (und die tägliche Update-Prüfung) muss der Scheduler laufen (Cronjob):
 
 ```
 * * * * * cd /pfad/zum/projekt && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, Frontend-Build, Migrationen, Caches).
+Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, Frontend-Build, Migrationen, Caches) – oder bequem über den Online-Updater.
+
+## Online-Updater
+
+*Verwaltung → System-Update* (Recht `system update`, erhalten alle Konten mit `edit permission`) zeigt die installierte Version, prüft per `git fetch`, ob es neue Commits gibt, und listet die Änderungen. „Update jetzt installieren" startet im Hintergrund `php artisan spendenlauf:update`, das dieselben Schritte wie `deploy.sh` ausführt; der Fortschritt erscheint live auf der Seite.
+
+- Abbruch vor dem Wartungsmodus, wenn auf dem Server Dateien geändert wurden oder die Installation Commits enthält, die im Repository fehlen.
+- Schlägt nach dem `git merge` ein Schritt fehl, wird der vorherige Stand automatisch wiederhergestellt (Code, Composer-Pakete, Frontend, Caches). **Datenbank-Migrationen werden nicht zurückgerollt** – vor größeren Updates ein Backup anlegen.
+- Status und Protokoll: `storage/app/updater/` (`status.json`, `update.log`). Auf der Konsole: `php artisan spendenlauf:update` (`--check` nur prüfen, `--force` Schritte auch ohne neue Version ausführen).
+- Der Scheduler prüft täglich um 4:15 Uhr auf neue Versionen; im Menü erscheint dann „neu". Installiert wird nur auf Klick.
+
+Voraussetzungen auf dem Server: Der Webserver-Benutzer muss das Projektverzeichnis schreiben und `git`, `composer` (und optional `npm`) ausführen dürfen. Gehört das Verzeichnis einem anderen Benutzer, meldet git „dubious ownership" – Abhilfe: `git config --global --add safe.directory /pfad/zum/projekt`. Unter *Server-Umgebung* zeigt die Seite die gefundenen Versionen von PHP, git, Composer und npm. Einstellungen in der `.env`:
+
+| Variable | Bedeutung |
+|---|---|
+| `UPDATER_ENABLED` | `false` blendet den Updater aus |
+| `UPDATER_BRANCH`, `UPDATER_REMOTE` | Quelle der Updates (Standard: aktueller Branch von `origin`) |
+| `UPDATER_PHP` | PHP-CLI, falls mehrere Versionen installiert sind (z. B. `/usr/bin/php8.3`) |
+| `UPDATER_COMPOSER` | z. B. `composer` oder `/usr/bin/php8.3 /opt/composer.phar` |
+| `UPDATER_NPM` | `auto` (bauen, wenn npm vorhanden) oder `false` – dann muss `public/build` anders aktualisiert werden |
+| `UPDATER_TIMEOUT` | maximale Dauer eines Schritts in Sekunden (Standard 900) |
 
 ## Ablauf eines Spendenlaufs
 
@@ -41,7 +63,7 @@ Deployment auf dem Server: `./deploy.sh` (Wartungsmodus, `git pull`, Composer, F
 
 - **Läufer:** Bei jeder Anmeldung (Eltern, Schnellerfassung, Übernahme aus dem Vorjahr) wird nach bereits angemeldeten Läufern gesucht – unabhängig von Groß-/Kleinschreibung, Umlaut-Schreibweise (ä/ae, ß/ss), Leerzeichen, Abkürzungen (Max/Maximilian) und kleinen Tippfehlern (`app/Services/Dubletten.php`). Gleicher Name und gleiches Geburtsdatum blockieren die Anmeldung (nur das Orga-Team kann übergehen), bei ähnlichen Namen kann bestätigt werden, dass es eine andere Person ist.
 - **Mitverwaltung:** Ist ein Kind schon vom anderen Elternteil angemeldet, wird statt einer zweiten Anmeldung die Mitverwaltung angefragt. Der anmeldende Elternteil (oder das Orga-Team) bestätigt auf der Startseite; das Orga-Team kann weitere Konten auch direkt zuordnen.
-- **Sponsoren** sind gemeinsame Datensätze: Gibt es die E-Mail-Adresse (oder Name + PLZ) schon, wird der vorhandene Sponsor verwendet; bei ähnlichen Namen wird nachgefragt. Eltern sehen bei gemeinsamen Sponsoren nur die Spenden für ihre eigenen Läufer.
+- **Sponsoren** sind gemeinsame Datensätze: Gibt es die E-Mail-Adresse (oder Name + PLZ) schon, wird der vorhandene Sponsor verwendet; bei ähnlichen Namen wird nachgefragt. Eltern sehen bei gemeinsamen Sponsoren nur die Spenden für ihre eigenen Läufer. Anschrift, E-Mail und Telefon sieht und ändert nur, wer den Sponsor zuerst erfasst hat (bzw. das Orga-Team) – sonst könnte jeder mit einer bekannten E-Mail-Adresse die Kontaktdaten auslesen oder Zahlungs-Mails umleiten.
 - **Bereinigung:** *Verwaltung → Doppelte Einträge* listet mögliche Dubletten. Beim Zusammenführen werden Spenden, Zahlungen, Mails, Verwalter und fehlende Angaben übernommen; Paare können als „keine Dublette“ markiert werden.
 
 ## Berechnung
@@ -66,6 +88,9 @@ Alle Beträge werden zentral in `app/Services/SpendenRechner.php` berechnet (int
 | `import export` | Runden-Import, Excel-Exporte |
 | `show auswertung` | Statistiken und Klassenauswertung |
 | `manage abrechnung` | Zahlungen, Zahlungsaufforderungen, Nachweise |
+| `system update` | Online-Updater (neue Versionen einspielen) |
+
+Konten mit Rechten, die man selbst nicht hat, kann nur bearbeiten, wer `edit permission` hat. Nach dem Lauf können Eltern weder das Team wechseln noch Spenden löschen (das würde bereits abgerechnete Beträge verändern).
 
 ## Wichtige Dateien
 

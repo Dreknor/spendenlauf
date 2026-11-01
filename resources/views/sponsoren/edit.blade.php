@@ -35,8 +35,11 @@
                     @include('sponsoren._form')
                     <button type="submit" class="btn-primary w-full">Speichern</button>
                 </form>
-            @else
+            @elsecan('manage abrechnung')
                 <p class="text-sm">{!! nl2br(e(implode("\n", $sponsor->anschrift_zeilen))) !!}</p>
+            @else
+                <p class="text-sm">{{ $sponsor->name }}<br>{{ trim($sponsor->plz.' '.$sponsor->ort) }}</p>
+                <p class="hint mt-3">Dieser Sponsor wurde von einer anderen Familie erfasst. Anschrift und E-Mail pflegt diese bzw. das Orga-Team.</p>
             @endcan
         </x-card>
     </div>

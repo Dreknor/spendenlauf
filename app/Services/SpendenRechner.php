@@ -11,6 +11,7 @@ use App\Models\Teams;
 use App\Models\Zahlung;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -126,6 +127,12 @@ class SpendenRechner
     public static function vergessen(): void
     {
         Cache::forever(self::CACHE_VERSION_KEY, (string) Str::uuid());
+
+        // Innerhalb einer Transaktion nach dem Commit erneut verwerfen: sonst könnte eine parallele Anfrage
+        // den alten Stand unter der neuen Version zwischenspeichern
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit(fn () => Cache::forever(self::CACHE_VERSION_KEY, (string) Str::uuid()));
+        }
     }
 
     public function bilanz(): EventBilanz

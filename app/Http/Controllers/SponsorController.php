@@ -23,6 +23,7 @@ class SponsorController extends Controller
         $alles = $this->siehtAlles($user);
 
         $sponsoren = Sponsor::query()
+            ->with('users')
             ->withCount(['sponsorings' => fn ($q) => $q->sichtbarFuer($user)])
             ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)))
             ->when($request->filled('q'), function ($q) use ($request) {

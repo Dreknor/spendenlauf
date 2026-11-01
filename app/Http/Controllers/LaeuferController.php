@@ -119,7 +119,7 @@ class LaeuferController extends Controller
         $this->authorize('view', $laeufer);
         $event = $this->event();
 
-        $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor', 'sponsorings.projects', 'besitzer', 'mitverwalter',
+        $laeufer->load(['team.laeufer', 'schulklasse', 'sponsorings.sponsor.users', 'sponsorings.projects', 'besitzer', 'mitverwalter',
             'mitverwaltungAnfragen' => fn ($q) => $q->where('status', MitverwaltungAnfrage::OFFEN)->with('user')]);
         $rechner = SpendenRechner::fuer($event);
 
@@ -129,7 +129,7 @@ class LaeuferController extends Controller
             'bilanz' => $rechner->bilanz(),
             'teams' => $this->waehlbareTeams($request),
             'klassen' => Schulklasse::orderBy('stufe')->orderBy('name')->pluck('name', 'id'),
-            'teamSponsorings' => $laeufer->team ? $laeufer->team->sponsorings()->with('sponsor')->get() : collect(),
+            'teamSponsorings' => $laeufer->team ? $laeufer->team->sponsorings()->with('sponsor.users')->get() : collect(),
         ]);
     }
 
@@ -186,6 +186,10 @@ class LaeuferController extends Controller
     {
         $this->authorize('update', $laeufer);
 
+        if ($antwort = $this->teamGesperrt($request)) {
+            return $antwort;
+        }
+
         $request->validate([
             'team_id' => ['nullable', Rule::exists('teams', 'id')->where('event_id', $this->event()->id)],
             'teamname' => ['nullable', 'required_without:team_id', 'string', 'max:100', Rule::unique('teams', 'name')->where('event_id', $this->event()->id)],
@@ -214,9 +218,13 @@ class LaeuferController extends Controller
         return $this->erfolg("{$laeufer->name} ist jetzt im Team „{$team->name}“.");
     }
 
-    public function teamVerlassen(Laeufer $laeufer)
+    public function teamVerlassen(Request $request, Laeufer $laeufer)
     {
         $this->authorize('update', $laeufer);
+
+        if ($antwort = $this->teamGesperrt($request)) {
+            return $antwort;
+        }
 
         $laeufer->team_id = null;
         $laeufer->save();
@@ -238,6 +246,11 @@ class LaeuferController extends Controller
     public function uebernehmen(Request $request)
     {
         $event = $this->event();
+
+        if (! $event->anmeldungOffen() && ! $request->user()->can('edit laeufer')) {
+            return $this->fehler('Die Anmeldung für diesen Spendenlauf ist geschlossen.', route('laeufer.index'));
+        }
+
         $request->validate(['laeufer' => ['required', 'array'], 'laeufer.*' => ['integer']]);
 
         $alte = Laeufer::withoutGlobalScope('event')
@@ -289,6 +302,16 @@ class LaeuferController extends Controller
             'dubletten' => $kandidaten->map(fn ($k) => ['id' => $k['laeufer']->id, 'grad' => $k['grad']])->all(),
             'dubletten_uebergehbar' => $darfUebergehen,
         ]);
+    }
+
+    /** Nach dem Lauf verändert ein Teamwechsel die Beträge der Team-Spenden – dann nur noch durch das Orga-Team. */
+    private function teamGesperrt(Request $request): ?RedirectResponse
+    {
+        if ($this->event()->laufVorbei() && ! $request->user()->can('edit teams')) {
+            return $this->fehler('Nach dem Lauf kann das Team nicht mehr gewechselt werden.');
+        }
+
+        return null;
     }
 
     private function waehlbareTeams(Request $request)

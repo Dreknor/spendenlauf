@@ -17,7 +17,7 @@ class SponsoringController extends Controller
         $user = $request->user();
 
         $sponsorings = Sponsoring::query()
-            ->with(['sponsorable', 'sponsor', 'projects'])
+            ->with(['sponsorable', 'sponsor.users', 'projects'])
             ->sichtbarFuer($user)
             ->when($request->filled('q'), function ($q) use ($request) {
                 $suche = '%'.$request->input('q').'%';
@@ -64,6 +64,11 @@ class SponsoringController extends Controller
     {
         $event = $this->event();
         $user = $request->user();
+
+        if (! $event->anmeldungOffen() && ! $user->can('edit sponsorings')) {
+            return $this->fehler('Für diesen Spendenlauf können keine Spenden mehr angelegt werden.', route('sponsorings.index'));
+        }
+
         $daten = $request->validated();
 
         $sponsor = Sponsor::findOrFail($daten['sponsor_id']);
@@ -93,16 +98,37 @@ class SponsoringController extends Controller
         $sponsoring->projects()->sync($daten['projects'] ?? $event->projects()->pluck('projects.id'));
         SpendenRechner::vergessen();
 
-        return $this->erfolg('Die Spende wurde angelegt.', $request->input('zurueck') ?: route('sponsorings.index'));
+        return $this->erfolg('Die Spende wurde angelegt.', $this->sicheresZiel($request->input('zurueck')) ?? route('sponsorings.index'));
     }
 
-    public function destroy(Sponsoring $sponsoring)
+    public function destroy(Request $request, Sponsoring $sponsoring)
     {
         $this->authorize('delete', $sponsoring);
+
+        // Nach dem Lauf sind die Beträge abgerechnet – Löschen dann nur durch das Orga-Team
+        if ($this->event()->laufVorbei() && ! $request->user()->can('edit sponsorings')) {
+            return $this->fehler('Nach dem Lauf können Spenden nur noch vom Orga-Team gelöscht werden.');
+        }
 
         $sponsoring->projects()->detach();
         $sponsoring->delete();
 
         return $this->erfolg('Spende gelöscht.');
+    }
+
+    /** Nur Ziele innerhalb der Anwendung zulassen (kein offener Redirect). */
+    private function sicheresZiel(?string $ziel): ?string
+    {
+        if (blank($ziel)) {
+            return null;
+        }
+
+        $host = parse_url($ziel, PHP_URL_HOST);
+
+        if ($host === null) {
+            return str_starts_with($ziel, '/') && ! str_starts_with($ziel, '//') ? $ziel : null;
+        }
+
+        return $host === request()->getHost() ? $ziel : null;
     }
 }

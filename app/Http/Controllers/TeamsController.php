@@ -54,7 +54,7 @@ class TeamsController extends Controller
     {
         $this->authorize('view', $team);
 
-        $team->load(['laeufer' => fn ($q) => $q->orderBy('nachname'), 'laeufer.schulklasse', 'sponsorings.sponsor', 'besitzer']);
+        $team->load(['laeufer' => fn ($q) => $q->orderBy('nachname'), 'laeufer.schulklasse', 'sponsorings.sponsor.users', 'besitzer']);
 
         return view('teams.edit', [
             'team' => $team,

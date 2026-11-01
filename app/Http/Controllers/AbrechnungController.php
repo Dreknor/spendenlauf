@@ -197,7 +197,8 @@ class AbrechnungController extends Controller
     {
         $abrechnung = SponsorAbrechnung::fuer($sponsor, $event);
 
-        if (blank($sponsor->email) || $abrechnung->konto->sollCent === 0) {
+        // Keine Aufforderung/Erinnerung an Sponsoren ohne Spende oder ohne offenen Betrag
+        if (blank($sponsor->email) || $abrechnung->konto->sollCent === 0 || $abrechnung->konto->offenCent() <= 0) {
             return false;
         }
 

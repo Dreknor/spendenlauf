@@ -54,6 +54,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        // Konten mit Rechten, die man selbst nicht hat, nur mit "edit permission" bearbeiten –
+        // sonst ließe sich über eine geänderte E-Mail-Adresse ein Admin-Konto übernehmen
+        $bearbeiter = $request->user();
+        $fehlendeRechte = $user->getAllPermissions()->pluck('name')->diff($bearbeiter->getAllPermissions()->pluck('name'));
+        if ($fehlendeRechte->isNotEmpty() && ! $bearbeiter->can('edit permission')) {
+            return $this->fehler('Dieses Konto hat Rechte, die Sie selbst nicht haben, und kann daher nur mit dem Recht „Rechte vergeben“ bearbeitet werden.');
+        }
+
         $daten = $request->validate([
             'vorname' => ['required', 'string', 'max:255'],
             'nachname' => ['required', 'string', 'max:255'],
@@ -62,9 +70,15 @@ class UserController extends Controller
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        $user->fill(collect($daten)->only(['vorname', 'nachname', 'email'])->all())->save();
+        $user->fill(collect($daten)->only(['vorname', 'nachname', 'email'])->all());
 
-        if ($request->user()->can('edit permission')) {
+        // Neue Adresse muss erneut bestätigt werden
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+        $user->save();
+
+        if ($bearbeiter->can('edit permission')) {
             $user->syncPermissions($daten['permissions'] ?? []);
         }
 

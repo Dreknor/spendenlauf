@@ -33,7 +33,7 @@
     @endcan
 @endif
 
-@if ($u->canAny(['edit event', 'edit user', 'import export', 'edit laeufer', 'edit sponsoren']))
+@if ($u->canAny(['edit event', 'edit user', 'import export', 'edit laeufer', 'edit sponsoren', 'system update']))
     <p class="px-3 pt-5 pb-1 text-xs font-semibold uppercase tracking-wider text-navy-300">Verwaltung</p>
     @can('edit event')
         <x-nav-link :href="route('events.index')" icon="calendar" :active="request()->routeIs('events.*', 'klassen.*')">Veranstaltungen</x-nav-link>
@@ -56,4 +56,13 @@
             </div>
         </div>
     @endcan
+    @if ($u->can('system update') && config('spendenlauf.updater.enabled'))
+        @php $neueVersion = app(\App\Services\Updater::class)->anzahlNeu(); @endphp
+        <x-nav-link :href="route('updates.index')" icon="refresh" :active="request()->routeIs('updates.*')">
+            System-Update
+            @if ($neueVersion > 0)
+                <span class="ml-1 rounded-full bg-esz-600 px-1.5 py-0.5 text-[10px] font-semibold text-white" title="Neue Version verfügbar">neu</span>
+            @endif
+        </x-nav-link>
+    @endif
 @endif
