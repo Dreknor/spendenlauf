@@ -41,11 +41,8 @@ return [
             'provider' => 'users',
         ],
 
-        'api' => [
-            'driver' => 'token',
-            'provider' => 'users',
-            'hash' => false,
-        ],
+        // Kein Guard mit dem Treiber "token" (Illuminate\Auth\TokenGuard):
+        // CVE-2026-114509 – fuer diese Laravel-Version gibt es keinen Fix mehr.
     ],
 
     /*
