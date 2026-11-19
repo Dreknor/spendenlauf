@@ -54,6 +54,7 @@ class EventRequest extends FormRequest
             'projects.*' => ['integer', 'exists:projects,id'],
             'vorlage_event_id' => ['nullable', 'integer', 'exists:events,id'],
             'klassen_uebernehmen' => ['nullable', 'boolean'],
+            'aktivieren' => ['nullable', 'boolean'],
         ];
     }
 
@@ -94,7 +95,7 @@ class EventRequest extends FormRequest
 
     public function eventDaten(): array
     {
-        $daten = collect($this->validated())->except(['altersgruppen_text', 'projects', 'vorlage_event_id', 'klassen_uebernehmen'])->all();
+        $daten = collect($this->validated())->except(['altersgruppen_text', 'projects', 'vorlage_event_id', 'klassen_uebernehmen', 'aktivieren'])->all();
         $daten['altersgruppen'] = $this->altersgruppen();
 
         return $daten;

@@ -78,6 +78,18 @@
                 <input type="hidden" name="vorlage_event_id" value="{{ $vorlage->id }}">
                 <input type="hidden" name="klassen_uebernehmen" value="0">
                 <x-checkbox name="klassen_uebernehmen" label="Klassen übernehmen und entsprechend der Jahre hochstufen (z. B. 5a → 7a)" checked />
+                <p class="mt-3 text-sm text-slate-600">
+                    Läufer, Teams, Spenden und Zahlungen werden <strong>nicht</strong> übernommen – sie bleiben bei „{{ $vorlage->name }}“ erhalten.
+                    Benutzerkonten bleiben bestehen; Eltern können ihre Läufer nach der Anmeldung über „Wieder dabei?“ selbst neu anmelden.
+                </p>
+            </x-card>
+        @endif
+
+        @if ($neu && $bisherAktiv)
+            <x-card title="Aktivierung">
+                <input type="hidden" name="aktivieren" value="0">
+                <x-checkbox name="aktivieren" label="Neuen Lauf sofort für alle Benutzer aktivieren"
+                            :hint="'Ohne Häkchen sehen nur Sie den neuen Lauf; alle anderen weiterhin „'.$bisherAktiv->name.'“ (z. B. solange dort noch abgerechnet wird). Aktivieren geht später unter „Veranstaltungen“.'" />
             </x-card>
         @endif
 

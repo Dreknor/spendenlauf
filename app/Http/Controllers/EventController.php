@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\LaufBereinigen;
 use App\Http\Requests\EventRequest;
 use App\Models\Event;
 use App\Models\Laeufer;
 use App\Models\Projects;
 use App\Models\Schulklasse;
 use App\Models\Sponsoring;
+use App\Models\Teams;
 use App\Services\SpendenRechner;
 use App\Support\CurrentEvent;
 use Illuminate\Http\Request;
@@ -21,6 +23,8 @@ class EventController extends Controller
             $e->anzahl_laeufer = Laeufer::forEvent($e)->count();
             $e->anzahl_sponsorings = Sponsoring::forEvent($e)->count();
             $e->anzahl_klassen = Schulklasse::forEvent($e)->count();
+            $e->anzahl_teams = Teams::forEvent($e)->count();
+            $e->bereinigen_moeglich = LaufBereinigen::erlaubt($e) && (new LaufBereinigen($e))->hatDaten();
 
             return $e;
         });
@@ -50,13 +54,20 @@ class EventController extends Controller
             'vorlage' => $vorlage,
             'projekte' => Projects::orderBy('name')->get(),
             'gewaehlteProjekte' => $vorlage ? $vorlage->projects()->pluck('projects.id')->all() : Projects::pluck('id')->all(),
+            'bisherAktiv' => Event::where('aktiv', true)->first(),
         ]);
     }
 
+    /**
+     * Legt einen neuen Lauf an. Läufer, Teams, Spenden und Zahlungen werden bewusst nicht übernommen –
+     * sie bleiben beim bisherigen Lauf. Eltern melden ihre Kinder über „Wieder dabei?“ selbst neu an.
+     */
     public function store(EventRequest $request)
     {
+        $vorherAktiv = Event::where('aktiv', true)->first();
+
         $event = DB::transaction(function () use ($request) {
-            $event = Event::create($request->eventDaten() + ['aktiv' => Event::count() === 0]);
+            $event = Event::create($request->eventDaten() + ['aktiv' => false]);
             $event->projects()->sync($request->input('projects', []));
 
             $vorlage = Event::find($request->integer('vorlage_event_id'));
@@ -64,10 +75,30 @@ class EventController extends Controller
                 $this->klassenUebernehmen($vorlage, $event);
             }
 
+            // Der erste Lauf ist immer aktiv, sonst nur auf Wunsch
+            if (! Event::where('aktiv', true)->exists() || $request->boolean('aktivieren')) {
+                Event::query()->update(['aktiv' => false]);
+                $event->update(['aktiv' => true]);
+            }
+
             return $event;
         });
 
-        return $this->erfolg("„{$event->name}“ wurde angelegt.", route('events.index'));
+        // Der anlegende Admin sieht sofort den neuen (leeren) Lauf – sonst zeigt die Läuferliste
+        // weiterhin den bisher aktiven Lauf und es sieht aus, als wären dessen Läufer übernommen worden.
+        if ($event->aktiv) {
+            $request->session()->forget(CurrentEvent::SESSION_KEY);
+        } else {
+            $request->session()->put(CurrentEvent::SESSION_KEY, $event->id);
+        }
+
+        $meldung = "„{$event->name}“ wurde angelegt. Sie sehen jetzt diesen Lauf – Läufer, Teams und Spenden"
+            .($vorherAktiv ? " von „{$vorherAktiv->name}“ wurden nicht übernommen und bleiben dort erhalten." : ' gibt es noch keine.');
+        if (! $event->aktiv && $vorherAktiv) {
+            $meldung .= " Für alle anderen ist weiterhin „{$vorherAktiv->name}“ aktiv.";
+        }
+
+        return $this->erfolg($meldung, route('events.index'));
     }
 
     public function edit(Event $event)
@@ -77,6 +108,7 @@ class EventController extends Controller
             'vorlage' => null,
             'projekte' => Projects::orderBy('name')->get(),
             'gewaehlteProjekte' => $event->projects()->pluck('projects.id')->all(),
+            'bisherAktiv' => null,
         ]);
     }
 
@@ -98,6 +130,41 @@ class EventController extends Controller
         $event->delete();
 
         return $this->erfolg('Veranstaltung gelöscht.', route('events.index'));
+    }
+
+    /** Bestätigungsseite: zeigt, was beim Bereinigen entfernt wird. */
+    public function bereinigenBestaetigen(Event $event)
+    {
+        if (! LaufBereinigen::erlaubt($event)) {
+            return $this->fehler('Vergangene Läufe können nicht bereinigt werden – ihre Daten bleiben erhalten.', route('events.index'));
+        }
+
+        return view('events.bereinigen', [
+            'event' => $event,
+            'anzahl' => (new LaufBereinigen($event))->zaehlen(),
+        ]);
+    }
+
+    /** Entfernt Läufer, Teams, Spenden und Zahlungen eines noch nicht gelaufenen Laufs; Benutzerkonten bleiben. */
+    public function bereinigen(Request $request, Event $event)
+    {
+        if (! LaufBereinigen::erlaubt($event)) {
+            return $this->fehler('Vergangene Läufe können nicht bereinigt werden – ihre Daten bleiben erhalten.', route('events.index'));
+        }
+
+        $request->validate(['bestaetigung' => ['required', 'string', function ($attribute, $value, $fail) use ($event) {
+            if (trim((string) $value) !== trim($event->name)) {
+                $fail('Bitte geben Sie zur Bestätigung den Namen des Laufs genau ein.');
+            }
+        }]], [], ['bestaetigung' => 'Bestätigung']);
+
+        $anzahl = (new LaufBereinigen($event))->ausfuehren();
+
+        return $this->erfolg(
+            "„{$event->name}“ wurde bereinigt: {$anzahl['laeufer']} Läufer, {$anzahl['teams']} Teams, {$anzahl['sponsorings']} Spenden, "
+            ."{$anzahl['zahlungen']} Zahlungen und {$anzahl['sponsoren']} Sponsoren entfernt. Benutzerkonten, Einstellungen, Projekte und Klassen sind erhalten.",
+            route('events.index'),
+        );
     }
 
     /** Macht die Veranstaltung für alle Benutzer zur aktuellen. */

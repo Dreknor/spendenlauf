@@ -112,6 +112,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('events', EventController::class)->except(['show']);
         Route::post('events/{event}/aktivieren', [EventController::class, 'aktivieren'])->name('events.aktivieren');
         Route::post('events/{event}/wechseln', [EventController::class, 'wechseln'])->name('events.wechseln');
+        Route::get('events/{event}/bereinigen', [EventController::class, 'bereinigenBestaetigen'])->name('events.bereinigen');
+        Route::post('events/{event}/bereinigen', [EventController::class, 'bereinigen'])->name('events.bereinigen.ausfuehren');
         Route::get('events/{event}/klassen', [SchulklasseController::class, 'index'])->name('klassen.index');
         Route::post('events/{event}/klassen', [SchulklasseController::class, 'store'])->name('klassen.store');
         Route::put('klassen/{schulklasse}', [SchulklasseController::class, 'update'])->name('klassen.update');

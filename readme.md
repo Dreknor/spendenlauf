@@ -51,7 +51,7 @@ Voraussetzungen auf dem Server: Der Webserver-Benutzer muss das Projektverzeichn
 
 ## Ablauf eines Spendenlaufs
 
-1. **Vorbereiten** – *Verwaltung → Veranstaltungen → Neuen Lauf vorbereiten*. Einstellungen werden vom letzten Lauf übernommen, Klassen werden auf Wunsch hochgestuft (5a → 7a bei zwei Jahren Abstand). Projekte auswählen, Bankdaten, PayPal.me-Name, Prozentsätze für soziale Abgabe und Klassenkasse prüfen und den Lauf **aktivieren**.
+1. **Vorbereiten** – *Verwaltung → Veranstaltungen → Neuen Lauf vorbereiten*. Einstellungen werden vom letzten Lauf übernommen, Klassen werden auf Wunsch hochgestuft (5a → 7a bei zwei Jahren Abstand). Projekte auswählen, Bankdaten, PayPal.me-Name, Prozentsätze für soziale Abgabe und Klassenkasse prüfen und den Lauf **aktivieren**. Läufer, Teams, Spenden und Zahlungen werden nicht übernommen, sie bleiben beim alten Lauf; Benutzerkonten bleiben bestehen. Nach dem Anlegen sehen Sie selbst sofort den neuen Lauf, alle anderen erst nach dem Aktivieren. Ein Lauf, der noch nicht stattgefunden hat, lässt sich unter *Veranstaltungen → Bereinigen* wieder leeren (nur die Benutzerkonten bleiben); vergangene Läufe sind dafür gesperrt.
 2. **Anmeldung** – Eltern registrieren sich, melden sich und ihre Kinder an (Kategorie, bei Schülern die Klasse). Läufer vom letzten Lauf können mit einem Klick übernommen werden. Jeder Läufer hat einen persönlichen **Sponsor-Link**, über den Sponsoren selbst Spenden zusagen. Die Zusage zählt erst, wenn der Sponsor sie über den Link in einer Bestätigungsmail bestätigt (Double-Opt-in, 7 Tage gültig; unbestätigte Angaben werden danach gelöscht). Über den Link sind höchstens 1.000 € fest bzw. 25 € je Runde möglich (`SPENDENLAUF_OEFFENTLICH_MAX_BETRAG`, `SPENDENLAUF_OEFFENTLICH_MAX_RUNDE`).
 3. **Lauftag** –
    - *Schnellerfassung*: Läufer, Startnummer, Sponsoren, Spenden und Barzahlungen in einem Schritt.
@@ -97,6 +97,6 @@ Konten mit Rechten, die man selbst nicht hat, kann nur bearbeiten, wer `edit per
 ## Wichtige Dateien
 
 - `app/Services/SpendenRechner.php`, `Statistik.php`, `SponsorAbrechnung.php` – Berechnungen
-- `app/Actions/ImportRunden.php`, `Startnummernvergabe.php`, `LaeuferUebernehmen.php`
+- `app/Actions/ImportRunden.php`, `Startnummernvergabe.php`, `LaeuferUebernehmen.php`, `LaufBereinigen.php`
 - `app/Models/Concerns/BelongsToEvent.php` – beschränkt Läufer, Teams, Spenden usw. auf die aktuelle Veranstaltung
 - `resources/css/app.css` – Tailwind-Theme mit den ESZ-Farben (`esz-*` = #cc224d, `navy-*` = #002561)
