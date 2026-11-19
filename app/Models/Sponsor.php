@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -45,6 +46,26 @@ class Sponsor extends Model
     public function mails(): HasMany
     {
         return $this->hasMany(SponsorMail::class);
+    }
+
+    /**
+     * Sponsoren eines Laufs: mit (für den Benutzer sichtbarer) Spende oder – für das Orga-Team – Zahlung
+     * in diesem Lauf, außerdem neu angelegte Sponsoren, die noch gar keine Spende haben.
+     */
+    public function scopeImLauf(Builder $query, Event $event, User $user): Builder
+    {
+        $naechsterLauf = $event->created_at
+            ? Event::where('created_at', '>', $event->created_at)->min('created_at')
+            : null;
+
+        return $query->where(fn ($q) => $q
+            ->whereHas('sponsorings', fn ($s) => $s->forEvent($event)->sichtbarFuer($user))
+            ->when($user->canAny(['edit sponsorings', 'manage abrechnung']), fn ($q) => $q
+                ->orWhereHas('zahlungen', fn ($z) => $z->forEvent($event)))
+            ->when($event->created_at, fn ($q) => $q->orWhere(fn ($neu) => $neu
+                ->whereDoesntHave('sponsorings', fn ($s) => $s->withoutGlobalScope('event'))
+                ->where($neu->qualifyColumn('created_at'), '>=', $event->created_at)
+                ->when($naechsterLauf, fn ($n) => $n->where($neu->qualifyColumn('created_at'), '<', $naechsterLauf)))));
     }
 
     public function getNameAttribute(): string

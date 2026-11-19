@@ -21,28 +21,41 @@ class SponsorController extends Controller
     {
         $user = $request->user();
         $alles = $this->siehtAlles($user);
+        $event = $this->event();
+        // Standard: nur Sponsoren des angezeigten Laufs; „alle“ zeigt auch die aus früheren Läufen
+        $alleLaeufe = $request->input('filter') === 'alle';
 
-        $sponsoren = Sponsor::query()
+        $basis = Sponsor::query()
+            ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)));
+
+        $sponsoren = (clone $basis)
             ->with('users')
             ->withCount(['sponsorings' => fn ($q) => $q->sichtbarFuer($user)])
-            ->unless($user->can('edit sponsoren'), fn ($q) => $q->whereHas('users', fn ($u) => $u->whereKey($user->id)))
+            ->unless($alleLaeufe, fn ($q) => $q->imLauf($event, $user))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $suche = '%'.$request->input('q').'%';
                 $q->where(fn ($q) => $q->where('vorname', 'like', $suche)->orWhere('nachname', 'like', $suche)
                     ->orWhere('firmenname', 'like', $suche)->orWhere('email', 'like', $suche)->orWhere('ort', 'like', $suche));
             })
-            ->when($request->input('filter') === 'aktuell', fn ($q) => $q->whereHas('sponsorings', fn ($s) => $s->sichtbarFuer($user)))
             ->orderBy('nachname')->orderBy('firmenname')
             ->paginate(50)
             ->withQueryString();
 
-        $bilanz = SpendenRechner::fuer($this->event())->bilanz();
+        $ausgeblendet = $alleLaeufe ? 0 : (clone $basis)->count() - (clone $basis)->imLauf($event, $user)->count();
+
+        $bilanz = SpendenRechner::fuer($event)->bilanz();
         $summen = $alles
             ? collect($sponsoren->items())->mapWithKeys(fn ($s) => [$s->id => $bilanz->sponsorSoll($s->id)])
             : Sponsoring::sichtbarFuer($user)->whereIn('sponsor_id', collect($sponsoren->items())->pluck('id'))->get(['id', 'sponsor_id'])
                 ->groupBy('sponsor_id')->map(fn ($s) => $s->sum(fn ($sp) => $bilanz->sponsorings[$sp->id] ?? 0));
 
-        return view('sponsoren.index', ['sponsoren' => $sponsoren, 'summen' => $summen]);
+        return view('sponsoren.index', [
+            'sponsoren' => $sponsoren,
+            'summen' => $summen,
+            'event' => $event,
+            'alleLaeufe' => $alleLaeufe,
+            'ausgeblendet' => $ausgeblendet,
+        ]);
     }
 
     public function create()
